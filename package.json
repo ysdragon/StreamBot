@@ -9,7 +9,7 @@
     "build": "npx tsc",
     "watch": "npx tsc -w"
   },
-  "author": "DraGo0oN",
+  "author": "ysdragon",
   "license": "MIT",
   "dependencies": {
     "@dank074/discord-video-stream": "^3.0.0",

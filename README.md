@@ -18,10 +18,10 @@ This is a Discord selfbot that allows streaming movies, videos, and streams from
 
 ## 🛠️ Installation Steps:
 
-This project is [hosted on github](https://github.com/DraGo0oN/StreamBot). You can clone this project directly using this command:
+This project is [hosted on github](https://github.com/ysdragon/StreamBot). You can clone this project directly using this command:
 
 ```
-git clone https://github.com/DraGo0oN/StreamBot
+git clone https://github.com/ysdragon/StreamBot
 ```
 
 Use npm install/update all the dependencies:
@@ -86,7 +86,7 @@ Configuration is done via `config.json`:
 ```
 
 ## Get Token ?
-Check the [Get token wiki](https://github.com/DraGo0oN/StreamBot/wiki/Get-Discord-user-token)
+Check the [Get token wiki](https://github.com/ysdragon/StreamBot/wiki/Get-Discord-user-token)
 
 ## Server
 
@@ -106,7 +106,7 @@ Protected by HTTP basic auth.
 
 # Contributing
 Public contributions are welcome!  
-You can create a [new issue](https://github.com/DraGo0oN/StreamBot/issues/new) for bugs, or feel free to open a [pull request](https://github.com/DraGo0oN/StreamBot/pulls) for any and all your changes or work-in-progress features.
+You can create a [new issue](https://github.com/ysdragon/StreamBot/issues/new) for bugs, or feel free to open a [pull request](https://github.com/ysdragon/StreamBot/pulls) for any and all your changes or work-in-progress features.
 
 
 ## Legal
