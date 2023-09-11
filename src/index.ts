@@ -3,7 +3,7 @@ import { command, streamLivestreamVideo, MediaUdp, setStreamOpts, streamOpts, St
 import config from "./config.json";
 import fs from 'fs';
 import path from 'path';
-import ytdl from 'ytdl-core';
+import ytdl from '@distube/ytdl-core';
 
 
 const streamer = new Streamer(new Client({checkUpdate: false,}));
@@ -191,9 +191,14 @@ streamer.client.on('messageCreate', async (message) => {
                 
                 
                 const streamLinkUdpConn = await streamer.createStream();   
-                if (ytdl.validateURL(link)) { 
-                    const yturl = await getVideoUrl(link); 
-                    playVideo(yturl, streamLinkUdpConn, linkOptions);
+                if (ytdl.validateURL(link)) {
+                    const yturl = await getVideoUrl(link).catch(error => {
+                        console.error("Error:", error);
+                    });
+                
+                    if (yturl) {
+                        playVideo(yturl, streamLinkUdpConn, linkOptions);
+                    }
                 } else {
                     playVideo(link, streamLinkUdpConn, linkOptions);
                 }                        
@@ -394,16 +399,14 @@ async function playVideo(video: string, udpConn: MediaUdp, options: any) {
     }
 }
 
-async function getVideoUrl(videoUrl) {
-
+async function getVideoUrl(videoUrl: string) {
     const video = await ytdl.getInfo(videoUrl);
-  
+
     const videoFormats = video.formats
-      .filter(format => format.hasVideo && format.hasAudio) 
-      .filter(format => format.container === 'mp4');
-  
+        .filter((format: { hasVideo: any; hasAudio: any; }) => format.hasVideo && format.hasAudio)
+        .filter(format => format.container === 'mp4');
+
     return videoFormats[0].url;
-  
 }
   
 
