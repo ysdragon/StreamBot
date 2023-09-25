@@ -4,10 +4,11 @@ import config from "./config.json";
 import fs from 'fs';
 import path from 'path';
 import ytdl from '@distube/ytdl-core';
+import { TiktokLive } from "./util/Tiktok";
+const tiktokLive = new TiktokLive();
 
 
 const streamer = new Streamer(new Client({checkUpdate: false,}));
-
 setStreamOpts(
     config.streamOpts
 )
@@ -163,51 +164,65 @@ streamer.client.on('messageCreate', async (message) => {
                 const streamUdpConn = await streamer.createStream();
                 playVideo(movie.path, streamUdpConn, options);
                 message.reply('Playing ( `' + moviename + '` )...');
+                console.log(message.reply('Playing ( `' + moviename + '` )...'));
                 streamer.client.user?.setActivity(status_watch(moviename) as ActivityOptions)
                 break;
-            case 'playlink':               
-                if (streamStatus.joined) {
-                    message.reply('**Already joined**');
-                    return;
-                } 
-                let link = args.shift() || '';
-                if (!link) {
-                    message.reply('**Please provide a direct link/Youtube Link.**')
-                    return;
-                }
-
-                let linkstartTime = args.shift() || '';
-                let linkOptions = {}
-                await streamer.joinVoice(guildId, channelId);
-
-                streamStatus.joined = true;
-                streamStatus.playing = false;
-                streamStatus.starttime = linkstartTime;
-                streamStatus.channelInfo = {
-                    guildId: guildId,
-                    channelId: channelId,
-                    cmdChannelId: message.channel.id
-                }
-                
-                
-                const streamLinkUdpConn = await streamer.createStream();   
-                if (ytdl.validateURL(link)) {
-                    const yturl = await getVideoUrl(link).catch(error => {
-                        console.error("Error:", error);
-                    });
-                
-                    if (yturl) {
-                        playVideo(yturl, streamLinkUdpConn, linkOptions);
+                case 'playlink':
+                    if (streamStatus.joined) {
+                        message.reply('**Already joined**');
+                        return;
                     }
-                } else {
-                    playVideo(link, streamLinkUdpConn, linkOptions);
-                }                        
-                 
-
-                message.reply('Playing...');
-                streamer.client.user?.setActivity(status_watch("") as ActivityOptions)
-        
-                break;            
+                    
+                    let link = args.shift() || '';
+                    
+                    if (!link) {
+                        message.reply('**Please provide a direct link/Youtube Link.**')
+                        return;
+                    }
+                    
+                    let linkstartTime = args.shift() || '';
+                    let linkOptions = {}
+                    
+                    await streamer.joinVoice(guildId, channelId);
+                
+                    streamStatus.joined = true;
+                    streamStatus.playing = false;
+                    streamStatus.starttime = linkstartTime;
+                    streamStatus.channelInfo = {
+                        guildId: guildId,
+                        channelId: channelId,
+                        cmdChannelId: message.channel.id
+                    }
+                    
+                    const streamLinkUdpConn = await streamer.createStream();
+                
+                    if (validateTiktokURL(link)) {
+                        try {
+                            const liveUrl = await fetchTiktokUrl(link);
+                            if (liveUrl) {
+                                message.reply('**Playing '+ tiktokLive.user +'\'s live **');
+                                playVideo(liveUrl, streamLinkUdpConn, linkOptions);
+                            }
+                        } catch (error) {
+                            message.reply('An error occurred!');
+                        }
+                    } else {
+                        if (ytdl.validateURL(link)) {
+                            const yturl = await getVideoUrl(link).catch(error => {
+                                console.error("Error:", error);
+                            });
+                            if (yturl) {
+                                playVideo(yturl, streamLinkUdpConn, linkOptions);
+                            }
+                        } else {
+                            playVideo(link, streamLinkUdpConn, linkOptions);
+                        }
+                
+                        message.reply('Playing...');
+                        streamer.client.user?.setActivity(status_watch("") as ActivityOptions)
+                    }
+                
+                break;                 
             case 'stop':
                 // Implement your stop playing logic here
                 if(!streamStatus.joined) {
@@ -223,8 +238,9 @@ streamer.client.on('messageCreate', async (message) => {
                     channelId: '',
                     cmdChannelId: streamStatus.channelInfo.cmdChannelId
                 }
-                // use sigquit??
-                command?.kill("SIGINT");
+                // use sigkill??
+                command?.kill("SIGKILL");
+                console.log("Stopped playing")
                 // msg
                 message.reply('**Stopped playing.**');
                 break;  
@@ -353,62 +369,131 @@ async function playVideo(video: string, udpConn: MediaUdp, options: any) {
 
     udpConn.mediaConnection.setSpeaking(true);
     udpConn.mediaConnection.setVideoStatus(true);
+
     try {
         let videoStream = streamLivestreamVideo(video, udpConn, options);
-        command?.on('progress', (msg) => {
-            // print timemark if it passed 10 second sionce last print, becareful when it pass 0
-            if (streamStatus.timemark) {
-                if (lastPrint != "") {
-                    let last = lastPrint.split(':');
-                    let now = msg.timemark.split(':');
-                    // turn to seconds
-                    let s = parseInt(now[2]) + parseInt(now[1]) * 60 + parseInt(now[0]) * 3600;
-                    let l = parseInt(last[2]) + parseInt(last[1]) * 60 + parseInt(last[0]) * 3600;
-                    if (s - l >= 10) {
-                        console.log(`Timemark: ${msg.timemark}`);
-                        lastPrint = msg.timemark;
-                    }
-                } else {
-                    console.log(`Timemark: ${msg.timemark}`);
-                    lastPrint = msg.timemark;
-                }
-            }
-            streamStatus.timemark = msg.timemark;
-        });
+
+        command?.on('progress', handleProgress);
+
         const res = await videoStream;
-        console.log("Finished playing video " + res);
-    } catch (e) {
-        console.log(e);
+        console.log("Finished playing video");
+    } catch (error) {
+        //console.log(error);
     } finally {
         udpConn.mediaConnection.setSpeaking(false);
         udpConn.mediaConnection.setVideoStatus(false);
+        command?.kill("SIGKILL");
+        sendFinishMessage();
+        cleanupStreamStatus();
     }
-    command?.kill("SIGINT");
-    // send message to channel, not reply
-    (streamer.client.channels.cache.get(streamStatus.channelInfo.cmdChannelId) as TextChannel).send('**Finished playing video.**');
+}
+
+function handleProgress(msg: any) {
+    if (shouldPrintTimemark(msg.timemark)) {
+        console.log(`Timemark: ${msg.timemark}`);
+        lastPrint = msg.timemark;
+    }
+
+    streamStatus.timemark = msg.timemark;
+}
+
+function shouldPrintTimemark(timemark: string): boolean {
+    if (!streamStatus.timemark) {
+        return true;
+    }
+
+    const last = parseTimemark(lastPrint);
+    const now = parseTimemark(timemark);
+
+    const lastSeconds = timeToSeconds(last);
+    const nowSeconds = timeToSeconds(now);
+
+    return nowSeconds - lastSeconds >= 10;
+}
+
+function parseTimemark(timemark: string): number[] {
+    return timemark.split(':').map(Number);
+}
+
+function timeToSeconds(time: number[]): number {
+    return time[2] + time[1] * 60 + time[0] * 3600;
+}
+
+function sendFinishMessage() {
+    const channel = streamer.client.channels.cache.get(streamStatus.channelInfo.cmdChannelId) as TextChannel;
+    channel?.send('**Finished playing video.**');
+}
+
+function cleanupStreamStatus() {
     streamer.leaveVoice();
-    streamer.client.user?.setActivity(status_idle() as ActivityOptions)
+    streamer.client.user?.setActivity(status_idle() as ActivityOptions);
+
     streamStatus.joined = false;
     streamStatus.joinsucc = false;
     streamStatus.playing = false;
-    lastPrint = ""
+    lastPrint = "";
+
     streamStatus.channelInfo = {
         guildId: '',
         channelId: '',
         cmdChannelId: ''
-    }
+    };
 }
 
 async function getVideoUrl(videoUrl: string) {
+
     const video = await ytdl.getInfo(videoUrl);
+    const videoDetails = video.videoDetails;
+    if (videoDetails.isLiveContent) {
+        // check if the video url is livestream
+        const tsFormats = video.formats.filter(format => format.container === 'ts');
+        const highestTsFormat = tsFormats.reduce((prev: any, current: any) => {
+            if (!prev || current.bitrate > prev.bitrate) {
+                return current;
+            }
+            return prev;
+        });
 
-    const videoFormats = video.formats
-        .filter((format: { hasVideo: any; hasAudio: any; }) => format.hasVideo && format.hasAudio)
-        .filter(format => format.container === 'mp4');
+        if (highestTsFormat) {
+            return highestTsFormat.url;
+        }
+    } else {
+        const videoFormats = video.formats
+            .filter((format: {
+                hasVideo: any;hasAudio: any;
+            }) => format.hasVideo && format.hasAudio)
+            .filter(format => format.container === 'mp4');
 
-    return videoFormats[0].url;
+        return videoFormats[0].url;
+    }
 }
+
+async function fetchTiktokUrl(url: string) {
+  try {
+    // Set the TikTok URL you want to fetch information from
+    tiktokLive.url = url;
+
+    // Fetch the room and user information from the TikTok URL
+    const [user, roomId] = await tiktokLive.getRoomAndUserFromUrl();
+    // Fetch the live stream URL
+    const liveUrl = await tiktokLive.getLiveUrl();
+    return liveUrl;
+
+//    console.log(`Live Stream URL: ${liveUrl}`);
+  } catch (error) {
+    //console.error('An error occurred:', error.message);
+  }
+}
+
+
+
+function validateTiktokURL(url: string) {
+    const tiktokLiveUrlRegex = /https:\/\/(www\.)?tiktok\.com\/@([^/]+)\/live/i;
+    return tiktokLiveUrlRegex.test(url);
+  }
   
+
+
 
 // run server if enabled in config
 if (config.server.enabled) {
