@@ -5,9 +5,10 @@ This is a Discord selfbot that allows streaming movies, videos, and streams from
 ## 🧐Features
 
 - Stream movies/videos from a local folder
-- Stream YouTube videos by link
+- Stream YouTube videos, live streams by link
+- Stream Tiktok live streams by link
 - Stream arbitrary links (video files, live streams, etc.)
-- Playback commands: play, pause, resume, stop
+- Playback commands: play, playlink, pause, resume, stop
 - List available movies
 - Refresh movie list
 - Get playback status
@@ -43,15 +44,15 @@ npm run start
 ## 🛠️ Commands
 
 ```
-play <movie name> - Play a movie from the local folder
-playlink <url> - Play a YouTube video or direct link
-stop - Stop the current playback
-pause - Pause the current playback
-resume - Resume playback
-list - List available movies
-refresh - Refresh the movie list
-status - Get current playback status
-help - Show help message
+play <movie name> - Play a movie from the local folder.
+playlink <url> - Play a YouTube video/live stream, TikTok live stream, or direct link.
+stop - Stop the current playback.
+pause - Pause the current playback.
+resume - Resume playback.
+list - List available movies.
+refresh - Refresh the movie list.
+status - Get current playback status.
+help - Show help message.
 ```
 
 ## 🛠️ Configuration
@@ -60,27 +61,27 @@ Configuration is done via `config.json`:
 
 ```json
 {
-  "token": "<user bot token>",
-  "prefix": "$",
+  "token": "<user bot token>", // discord user token
+  "prefix": "$", // bot prefix 
   "guildId": "<guild id (server id)>",
   "commandChannel": "<command channel id>",
   "videoChannel": "<voice channel id>",
   "adminIds": ["<admin id>"],
   "movieFolder": "<movies folder path>",
-  "previewCache": "/tmp/preview-cache",
+  "previewCache": "/tmp/preview-cache", // here you can set the preview thumbnails cache folder
   "streamOpts": {
-    "width": 1920,
-    "height": 1080,
-    "fps": 30, 
-    "bitrateKbps": 8000,
-    "hardware_acc": false,
-    "videoCodec": "H264"
+    "width": 1920, // Resolution width
+    "height": 1080, // Resolution heught 
+    "fps": 30,  // Stream fps
+    "bitrateKbps": 8000, // Stream bitrate in kb
+    "hardware_acc": false, // Enable or disable stream hardware acceleration
+    "videoCodec": "H264" // Stream/Videocodec can be set to (H264) or (VP8)
   },
   "server": {
-    "enabled": true,
-    "username": "admin",
-    "password": "admin", 
-    "port": 8080
+    "enabled": true, // if you want to enable the movies server
+    "username": "admin", // here you can set the username
+    "password": "admin",  // here you can set the password
+    "port": 8080 // here you can set a port to listen the movies server site
   }
 }
 ```
