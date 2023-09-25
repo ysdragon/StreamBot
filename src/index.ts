@@ -5,10 +5,12 @@ import fs from 'fs';
 import path from 'path';
 import ytdl from 'ytdl-core';
 import { TiktokLive } from "./util/Tiktok";
-const tiktokLive = new TiktokLive();
 
 
 const streamer = new Streamer(new Client({checkUpdate: false,}));
+
+const tiktokLive = new TiktokLive();
+
 setStreamOpts(
     config.streamOpts
 )
@@ -224,7 +226,6 @@ streamer.client.on('messageCreate', async (message) => {
                 
                 break;                 
             case 'stop':
-                // Implement your stop playing logic here
                 if(!streamStatus.joined) {
                     message.reply('**Already Stopped!**');
                     return;
@@ -241,7 +242,6 @@ streamer.client.on('messageCreate', async (message) => {
                 // use sigkill??
                 command?.kill("SIGKILL");
                 console.log("Stopped playing")
-                // msg
                 message.reply('**Stopped playing.**');
                 break;  
             case 'playtime': //        not working correctly for now
@@ -378,7 +378,7 @@ async function playVideo(video: string, udpConn: MediaUdp, options: any) {
         const res = await videoStream;
         console.log("Finished playing video");
     } catch (error) {
-        //console.log(error);
+        
     } finally {
         udpConn.mediaConnection.setSpeaking(false);
         udpConn.mediaConnection.setVideoStatus(false);
@@ -477,11 +477,11 @@ async function fetchTiktokUrl(url: string) {
     const [user, roomId] = await tiktokLive.getRoomAndUserFromUrl();
     // Fetch the live stream URL
     const liveUrl = await tiktokLive.getLiveUrl();
-    return liveUrl;
 
-//    console.log(`Live Stream URL: ${liveUrl}`);
+    return liveUrl;
+    //console.log(`Live Stream URL: ${liveUrl}`); // this was for debugging
   } catch (error) {
-    //console.error('An error occurred:', error.message);
+    //console.error('An error occurred!); // this was for debugging
   }
 }
 
@@ -490,7 +490,7 @@ async function fetchTiktokUrl(url: string) {
 function validateTiktokURL(url: string) {
     const tiktokLiveUrlRegex = /https:\/\/(www\.)?tiktok\.com\/@([^/]+)\/live/i;
     return tiktokLiveUrlRegex.test(url);
-  }
+}
   
 
 
