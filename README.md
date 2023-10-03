@@ -1,6 +1,6 @@
 # StreamBot
 
-This is a Discord selfbot that allows streaming movies, videos, and streams from YouTube and direct links to a Discord voice channel.
+This is a Discord selfbot that allows streaming movies, videos, and streams from YouTube/Tiktok and direct links to a Discord voice channel.
 
 ## 🧐Features
 
@@ -70,14 +70,14 @@ Configuration is done via `config.json`:
   "previewCache": "/tmp/preview-cache", // here you can set the preview thumbnails cache folder
   "streamOpts": {
     "width": 1920, // Resolution width
-    "height": 1080, // Resolution heught 
+    "height": 1080, // Resolution height 
     "fps": 30,  // Stream fps
     "bitrateKbps": 8000, // Stream bitrate in kb
     "hardware_acc": false, // Enable or disable stream hardware acceleration
-    "videoCodec": "H264" // Stream/Video codec can be set to (H264) or (VP8)
+    "videoCodec": "H264" // Stream/video codec can be set to either (H.264) or (VP8)
   },
   "server": {
-    "enabled": true, // if you want to enable the movies server
+    "enabled": false, // if you want to enable the movies server
     "username": "admin", // here you can set the username
     "password": "admin",  // here you can set the password
     "port": 8080 // here you can set a port to listen the movies server site
