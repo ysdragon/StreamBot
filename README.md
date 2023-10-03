@@ -5,8 +5,7 @@ This is a Discord selfbot that allows streaming movies, videos, and streams from
 ## 🧐Features
 
 - Stream movies/videos from a local folder
-- Stream YouTube videos, live streams by link
-- Stream Tiktok live streams by link
+- Stream (YouTube videos/live streams, Tiktok videos/live streams) by link
 - Stream arbitrary links (video files, live streams, etc.)
 - Playback commands: play, playlink, pause, resume, stop
 - List available movies
@@ -45,7 +44,7 @@ npm run start
 
 ```
 play <movie name> - Play a movie from the local folder.
-playlink <url> - Play a YouTube video/live stream, TikTok live stream, or direct link.
+playlink <url> - Play a (YouTube video/live stream, TikTok video/live stream, direct link).
 stop - Stop the current playback.
 pause - Pause the current playback.
 resume - Resume playback.
@@ -75,7 +74,7 @@ Configuration is done via `config.json`:
     "fps": 30,  // Stream fps
     "bitrateKbps": 8000, // Stream bitrate in kb
     "hardware_acc": false, // Enable or disable stream hardware acceleration
-    "videoCodec": "H264" // Stream/Videocodec can be set to (H264) or (VP8)
+    "videoCodec": "H264" // Stream/Video codec can be set to (H264) or (VP8)
   },
   "server": {
     "enabled": true, // if you want to enable the movies server
