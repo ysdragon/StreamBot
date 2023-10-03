@@ -1,6 +1,6 @@
 {
   "name": "StreamBot",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A self bot to stream movies/videos to Discord.",
   "main": "dist/index.js",
   "scripts": {
@@ -22,6 +22,7 @@
     "tslib": "^2.6.2",
     "node-opus": "^0.3.3",
     "opusscript": "^0.0.8",
+    "random-useragent": "^0.5.0",
     "ffmpeg-static": "^5.2.0"
   },
     "devDependencies": {
