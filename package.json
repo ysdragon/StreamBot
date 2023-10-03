@@ -22,6 +22,7 @@
     "tslib": "^2.6.2",
     "node-opus": "^0.3.3",
     "opusscript": "^0.0.8",
+    "play-dl": "^1.9.7",
     "random-useragent": "^0.5.0",
     "ffmpeg-static": "^5.2.0"
   },
