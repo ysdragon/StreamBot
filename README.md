@@ -4,14 +4,14 @@ This is a Discord selfbot that allows streaming movies, videos, and streams from
 
 ## 🧐Features
 
-- Stream movies/videos from a local folder
-- Stream (YouTube videos/live streams, Tiktok videos/live streams) by link
-- Stream arbitrary links (video files, live streams, etc.)
-- Playback commands: play, playlink, pause, resume, stop
-- List available movies
-- Refresh movie list
-- Get playback status
-
+- Stream movies/videos from a local folder.
+- Stream and search for YouTube videos using titles.
+- Stream (YouTube videos/live streams, Tiktok videos/live streams) by link.
+- Stream arbitrary links (video files, live streams, etc.).
+- Playback commands: play, playlink, ytplay, pause, resume, stop.
+- List available movies.
+- Refresh the movie list.
+- Get playback status.
 
 ## Requirements
 [node.js](https://nodejs.org/) _(version 16.9.0 or later)_  
@@ -45,6 +45,8 @@ npm run start
 ```
 play <movie name> - Play a movie from the local folder.
 playlink <url> - Play a (YouTube video/live stream, TikTok video/live stream, direct link).
+ytplay <query> - Play a YouTube video from a title query.
+ytsearch <query> - Search for a YouTube video using a title query.
 stop - Stop the current playback.
 pause - Pause the current playback.
 resume - Resume playback.
@@ -101,7 +103,7 @@ Protected by HTTP basic auth.
 
 ## Todo
 
-- [ ]  Adding ytsearch and ytplay commands   
+- [x]  Adding ytsearch and ytplay commands   
 - [ ]  Play from torrents  
 
 # Contributing

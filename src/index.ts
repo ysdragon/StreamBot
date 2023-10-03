@@ -4,6 +4,7 @@ import config from "./config.json";
 import fs from 'fs';
 import path from 'path';
 import ytdl from 'ytdl-core';
+import yts from 'play-dl';
 import { TiktokVideo, TiktokLive } from "./util/Tiktok";
 
 const streamer = new Streamer(new Client({checkUpdate: false,}));
@@ -240,7 +241,62 @@ streamer.client.on('messageCreate', async (message) => {
                             streamer.client.user?.setActivity(status_watch("") as ActivityOptions);
                     }                    
                 
-                break;                 
+                break; 
+            case 'ytplay':
+                if (streamStatus.joined) {
+                    message.reply('**Already joined**');
+                    return;
+                }
+                
+                let title = args.length > 1 ? args.slice(1).join(' ') : args[1] || args.shift() || '';
+                
+                if (!title) {
+                    message.reply('**Please provide a Youtube title!**')
+                    return;
+                }
+                
+                let titlestartTime = args.shift() || '';
+                let titleOptions = {}
+                
+                await streamer.joinVoice(guildId, channelId);
+            
+                streamStatus.joined = true;
+                streamStatus.playing = false;
+                streamStatus.starttime = titlestartTime;
+                streamStatus.channelInfo = {
+                    guildId: guildId,
+                    channelId: channelId,
+                    cmdChannelId: message.channel.id
+                }
+                
+                const streamYoutubeTitleUdpConn = await streamer.createStream();
+                const ytUrlFromTitle = await ytPlayTitle(title);
+                if(ytUrlFromTitle) {
+                    message.reply('**Playing...**');
+                    playVideo(ytUrlFromTitle, streamYoutubeTitleUdpConn, titleOptions);
+                    streamer.client.user?.setActivity(status_watch("") as ActivityOptions);    
+                }
+
+                break;  
+            case 'ytsearch':                  
+                    let query = args.length > 1 ? args.slice(1).join(' ') : args[1] || args.shift() || '';
+                    
+                    if (!query) {
+                        message.reply('**Please provide a Youtube title!**')
+                        return;
+                    }
+                    
+                    const ytSearchQuery = await ytSearch(query);
+                    try {
+                        if(ytSearchQuery) {
+                            message.reply(ytSearchQuery.join('\n'));
+                        }
+    
+                    } catch(error) {
+                        message.reply("Error");
+                    }
+    
+                break;               
             case 'stop':
                 if(!streamStatus.joined) {
                     message.reply('**Already Stopped!**');
@@ -318,8 +374,18 @@ streamer.client.on('messageCreate', async (message) => {
                     },
 
                     playlink: {
-                        description: 'Play a movie/video/stream direct link or from youtube link',
+                        description: 'Play a movie/video/stream direct link or from youtube/tiktok link',
                         usage: 'playlink [link]',
+                    },
+
+                    ytplay: {
+                        description: 'Play a YouTube video from a title query',
+                        usage: 'ytplay [query]',
+                    },
+
+                    ytsearch: {
+                        description: 'Search for a YouTube video using a title query',
+                        usage: 'ytsearch [query]',
                     },
 
                     stop: {
@@ -483,6 +549,46 @@ async function getVideoUrl(videoUrl: string) {
         return videoFormats[0].url;
     }
 }
+
+async function ytPlayTitle(title: string) {
+    try {
+        const r = await yts.search(title, { limit: 1 });
+        
+        if (r.length > 0) {
+            const video = r[0];
+            const videoId = video.id;
+            if(videoId) {
+                const ytvideo = await ytdl.getInfo(videoId);
+                const videoFormats = ytvideo.formats
+                    .filter((format: {
+                        hasVideo: any;hasAudio: any;
+                }) => format.hasVideo && format.hasAudio)
+                    .filter(format => format.container === 'mp4');
+                return videoFormats[0].url;
+            }
+        }             
+    } catch(error) {
+        console.log('No videos found with the given title.');
+    }
+}
+
+async function ytSearch(title: string): Promise<string[]> {
+    try {
+        const r = await yts.search(title, { limit: 5 });
+        const searchResults: string[] = [];
+        if (r.length > 0) {
+            r.forEach(function(video: any, index: number) { // Corrected forEach loop
+                const result = `${index + 1}. \`${video.title}\``;
+                searchResults.push(result);
+            });
+        }
+        return searchResults;
+    } catch(error) {
+        console.log('No videos found with the given title.');
+        return [];
+    }
+}
+
 
 async function fetchTiktokUrl(url: string) {
   try {
