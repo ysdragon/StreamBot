@@ -1,4 +1,49 @@
 import axios, { AxiosResponse } from 'axios';
+import randomUseragent from 'random-useragent';
+
+
+export class TiktokVideo {
+    private headers: { 'User-Agent': string };
+
+    constructor() {
+        const userAgent = randomUseragent.getRandom();
+        this.headers = {
+            'User-Agent': userAgent,
+        };
+    }
+
+    async getVideo(url: string): Promise<string> {
+        const idVideo = await this.getIdVideo(url);
+        
+        try {
+            const response = await axios.get("https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id="+idVideo, {
+                headers: this.headers,
+            });
+
+            const res = response.data;
+            const urlMedia =
+                res.aweme_list[0].video.play_addr.url_list[0];
+            return urlMedia;
+        } catch (error) {
+            throw new Error("Error");
+        }
+    }
+
+    private getIdVideo(url: string): string {
+        const matching = url.includes("/video/");
+        if (!matching) {
+            console.log("URL not found");
+        }
+
+        const idVideo = url.substring(
+            url.indexOf("/video/") + 7,
+            url.length
+        );
+        return idVideo.length > 19
+            ? idVideo.substring(0, idVideo.indexOf("?"))
+            : idVideo;
+    }
+}
 
 export class TiktokLive {
     public url: string = '';
@@ -7,10 +52,11 @@ export class TiktokLive {
 
     async getRoomAndUserFromUrl(): Promise<[string, string]> {
         try {
+            const userAgent = randomUseragent.getRandom();
             const response: AxiosResponse<string> = await axios.get(this.url, {
                 maxRedirects: 0,
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    'User-Agent': userAgent,
                 }
             });
             const content: string = response.data;

@@ -4,11 +4,11 @@ import config from "./config.json";
 import fs from 'fs';
 import path from 'path';
 import ytdl from 'ytdl-core';
-import { TiktokLive } from "./util/Tiktok";
-
+import { TiktokVideo, TiktokLive } from "./util/Tiktok";
 
 const streamer = new Streamer(new Client({checkUpdate: false,}));
 
+const tiktokVideo = new TiktokVideo();
 const tiktokLive = new TiktokLive();
 
 setStreamOpts(
@@ -198,31 +198,47 @@ streamer.client.on('messageCreate', async (message) => {
                     
                     const streamLinkUdpConn = await streamer.createStream();
                 
-                    if (validateTiktokURL(link)) {
-                        try {
-                            const liveUrl = await fetchTiktokUrl(link);
-                            if (liveUrl) {
-                                message.reply('**Playing '+ tiktokLive.user +'\'s live **');
-                                playVideo(liveUrl, streamLinkUdpConn, linkOptions);
+                    switch (true) {
+                        case validateTiktokVideoURL(link):
+                            try {
+                                const videoUrl = await tiktokVideo.getVideo(link);
+                                if (videoUrl) {  
+                                    playVideo(videoUrl, streamLinkUdpConn, linkOptions);
+                                    message.reply('**Playing...**');
+                                    streamer.client.user?.setActivity(status_watch("") as ActivityOptions);
+                                }
+                            } catch (error) {
+                                message.reply('An error occurred!');
                             }
-                        } catch (error) {
-                            message.reply('An error occurred!');
-                        }
-                    } else {
-                        if (ytdl.validateURL(link)) {
+                            break;
+                    
+                        case validateTiktokLiveURL(link):
+                            try {
+                                const liveUrl = await fetchTiktokUrl(link);
+                                if (liveUrl) {
+                                    playVideo(liveUrl, streamLinkUdpConn, linkOptions);
+                                    message.reply('**Playing ' + tiktokLive.user + '\'s live **');
+                                    streamer.client.user?.setActivity(status_watch("") as ActivityOptions);
+                                }
+                            } catch (error) {
+                                message.reply('An error occurred!');
+                            }
+                            break;
+                        case ytdl.validateURL(link):
                             const yturl = await getVideoUrl(link).catch(error => {
                                 console.error("Error:", error);
                             });
                             if (yturl) {
+                                message.reply('**Playing...**');
                                 playVideo(yturl, streamLinkUdpConn, linkOptions);
+                                streamer.client.user?.setActivity(status_watch("") as ActivityOptions);
                             }
-                        } else {
+                            break;
+                        default:
                             playVideo(link, streamLinkUdpConn, linkOptions);
-                        }
-                
-                        message.reply('Playing...');
-                        streamer.client.user?.setActivity(status_watch("") as ActivityOptions)
-                    }
+                            message.reply('Playing...');
+                            streamer.client.user?.setActivity(status_watch("") as ActivityOptions);
+                    }                    
                 
                 break;                 
             case 'stop':
@@ -485,15 +501,15 @@ async function fetchTiktokUrl(url: string) {
   }
 }
 
-
-
-function validateTiktokURL(url: string) {
+function validateTiktokLiveURL(url: string) {
     const tiktokLiveUrlRegex = /https:\/\/(www\.)?tiktok\.com\/@([^/]+)\/live/i;
     return tiktokLiveUrlRegex.test(url);
 }
-  
 
-
+function validateTiktokVideoURL(url: string) {
+    const tiktokVideoUrlRegex = /https:\/\/(www\.)?tiktok\.com\/@[^/]+\/video\/\d+/i;
+    return tiktokVideoUrlRegex.test(url);
+}
 
 // run server if enabled in config
 if (config.server.enabled) {
