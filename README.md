@@ -15,6 +15,7 @@ This is a Discord selfbot that allows streaming movies, videos, and streams from
 
 ## Requirements
 [node.js](https://nodejs.org/) _(version 16.9.0 or later)_  
+[ffmpeg](https://www.ffmpeg.org/) _(must be added to path or installed to working directory)_
 
 ## 🛠️ Installation Steps:
 
