@@ -76,6 +76,7 @@ Configuration is done via `config.json`:
     "height": 1080, // Resolution height 
     "fps": 30,  // Stream fps
     "bitrateKbps": 8000, // Stream bitrate in kb
+    "maxBitrateKbps": 2500, // An option to change the max bitrate value in the payload
     "hardware_acc": false, // Enable or disable stream hardware acceleration
     "videoCodec": "H264" // Stream/video codec can be set to either (H.264) or (VP8)
   },

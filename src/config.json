@@ -13,6 +13,7 @@
         "height": 1080,
         "fps": 30,
         "bitrateKbps": 2000,
+        "maxBitrateKbps": 2500,
         "hardware_acc": false,
         "videoCodec": "H264"
     },
