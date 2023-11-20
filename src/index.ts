@@ -46,7 +46,7 @@ const status_watch = (name) => {
 streamer.client.on("ready", () => {
     if (streamer.client.user) {
         console.log(`--- ${streamer.client.user.tag} is ready ---`);
-        streamer.client.user.setActivity(status_idle() as ActivityOptions)
+        streamer.client.user.setActivity(status_idle() as unknown as ActivityOptions)
     }
 });
 
@@ -75,7 +75,7 @@ streamer.client.on('voiceStateUpdate', (oldState, newState) => {
                 channelId: '',
                 cmdChannelId: streamStatus.channelInfo.cmdChannelId
             }
-            streamer.client.user?.setActivity(status_idle() as ActivityOptions)
+            streamer.client.user?.setActivity(status_idle() as unknown as ActivityOptions)
         }
     }
     // when join channel success
@@ -168,7 +168,7 @@ streamer.client.on('messageCreate', async (message) => {
                 playVideo(movie.path, streamUdpConn, options);
                 message.reply('Playing ( `' + moviename + '` )...');
                 console.log(message.reply('Playing ( `' + moviename + '` )...'));
-                streamer.client.user?.setActivity(status_watch(moviename) as ActivityOptions)
+                streamer.client.user?.setActivity(status_watch(moviename) as unknown as ActivityOptions)
                 break;
                 case 'playlink':
                     if (streamStatus.joined) {
@@ -206,7 +206,7 @@ streamer.client.on('messageCreate', async (message) => {
                                 if (videoUrl) {  
                                     playVideo(videoUrl, streamLinkUdpConn, linkOptions);
                                     message.reply('**Playing...**');
-                                    streamer.client.user?.setActivity(status_watch("") as ActivityOptions);
+                                    streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
                                 }
                             } catch (error) {
                                 message.reply('An error occurred!');
@@ -219,7 +219,7 @@ streamer.client.on('messageCreate', async (message) => {
                                 if (liveUrl) {
                                     playVideo(liveUrl, streamLinkUdpConn, linkOptions);
                                     message.reply('**Playing ' + tiktokLive.user + '\'s live **');
-                                    streamer.client.user?.setActivity(status_watch("") as ActivityOptions);
+                                    streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
                                 }
                             } catch (error) {
                                 message.reply('An error occurred!');
@@ -232,13 +232,13 @@ streamer.client.on('messageCreate', async (message) => {
                             if (yturl) {
                                 message.reply('**Playing...**');
                                 playVideo(yturl, streamLinkUdpConn, linkOptions);
-                                streamer.client.user?.setActivity(status_watch("") as ActivityOptions);
+                                streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
                             }
                             break;
                         default:
                             playVideo(link, streamLinkUdpConn, linkOptions);
                             message.reply('Playing...');
-                            streamer.client.user?.setActivity(status_watch("") as ActivityOptions);
+                            streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
                     }                    
                 
                 break; 
@@ -274,7 +274,7 @@ streamer.client.on('messageCreate', async (message) => {
                 if(ytUrlFromTitle) {
                     message.reply('**Playing...**');
                     playVideo(ytUrlFromTitle, streamYoutubeTitleUdpConn, titleOptions);
-                    streamer.client.user?.setActivity(status_watch("") as ActivityOptions);    
+                    streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);    
                 }
 
                 break;  
@@ -508,7 +508,7 @@ function sendFinishMessage() {
 
 function cleanupStreamStatus() {
     streamer.leaveVoice();
-    streamer.client.user?.setActivity(status_idle() as ActivityOptions);
+    streamer.client.user?.setActivity(status_idle() as unknown as ActivityOptions);
 
     streamStatus.joined = false;
     streamStatus.joinsucc = false;
