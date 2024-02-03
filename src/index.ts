@@ -7,7 +7,7 @@ import ytdl from 'ytdl-core';
 import yts from 'play-dl';
 import { TiktokVideo, TiktokLive } from "./util/Tiktok";
 
-const streamer = new Streamer(new Client({checkUpdate: false,}));
+const streamer = new Streamer(new Client());
 
 const tiktokVideo = new TiktokVideo();
 const tiktokLive = new TiktokLive();
