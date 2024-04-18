@@ -25,20 +25,20 @@ This project is [hosted on github](https://github.com/ysdragon/StreamBot). You c
 git clone https://github.com/ysdragon/StreamBot
 ```
 
-Use npm install/update all the dependencies:
+Use [bun](https://bun.sh) to install all the dependencies:
 ```
-npm i
+bun install 
 ```
 
 Build the artifacts from source:
 ```
-npm run build
+bun run build
 ```
 
 ## Usage
 Start the built artifacts:
 ```
-npm run start
+bun run start
 ```
 
 ## 🛠️ Commands
@@ -78,7 +78,7 @@ Configuration is done via `config.json`:
     "bitrateKbps": 8000, // Stream bitrate in kb
     "maxBitrateKbps": 2500, // An option to change the max bitrate value in the payload
     "hardware_acc": false, // Enable or disable stream hardware acceleration
-    "videoCodec": "H264" // Stream/video codec can be set to either (H.264) or (VP8)
+    "videoCodec": "H264" // Stream/video codec can be set to either (H264), (H265) or (VP8)
   },
   "server": {
     "enabled": false, // if you want to enable the movies server
