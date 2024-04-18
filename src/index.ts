@@ -3,7 +3,7 @@ import { command, streamLivestreamVideo, MediaUdp, setStreamOpts, streamOpts, St
 import config from "./config.json";
 import fs from 'fs';
 import path from 'path';
-import ytdl from 'ytdl-core';
+import ytdl from '@distube/ytdl-core';
 import yts from 'play-dl';
 import { TiktokVideo, TiktokLive } from "./util/Tiktok";
 
