@@ -203,7 +203,7 @@ streamer.client.on('messageCreate', async (message) => {
                         cmdChannelId: message.channel.id
                     }
                     
-                    const streamLinkUdpConn = await streamer.createStream(o);
+                    const streamLinkUdpConn = await streamer.createStream(streamOpts);
                 
                     switch (true) {
                         case validateTiktokVideoURL(link):
