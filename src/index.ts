@@ -1,5 +1,5 @@
 import { Client, TextChannel, CustomStatus, ActivityOptions, WebEmbed } from "discord.js-selfbot-v13";
-import { command, streamLivestreamVideo, MediaUdp, setStreamOpts, streamOpts, Streamer } from "@dank074/discord-video-stream";
+import { command, streamLivestreamVideo, MediaUdp, streamOpts, Streamer } from "@dank074/discord-video-stream";
 import config from "./config.json";
 import fs from 'fs';
 import path from 'path';
@@ -12,9 +12,15 @@ const streamer = new Streamer(new Client());
 const tiktokVideo = new TiktokVideo();
 const tiktokLive = new TiktokLive();
 
-setStreamOpts(
-    config.streamOpts
-)
+var streamOpts = {
+    width: config.streamOpts.width, 
+    height: config.streamOpts.height, 
+    fps: config.streamOpts.fps, 
+    bitrateKbps: config.streamOpts.bitrateKbps,
+    maxBitrateKbps: config.streamOpts.maxBitrateKbps, 
+    hardwareAcceleratedDecoding: config.streamOpts.hardware_acc,
+    videoCodec: config.streamOpts.videoCodec
+}
 
 const prefix = config.prefix;
 
@@ -164,7 +170,7 @@ streamer.client.on('messageCreate', async (message) => {
                     channelId: channelId,
                     cmdChannelId: message.channel.id
                 }
-                const streamUdpConn = await streamer.createStream();
+                const streamUdpConn = await streamer.createStream(streamOpts);
                 playVideo(movie.path, streamUdpConn, options);
                 message.reply('Playing ( `' + moviename + '` )...');
                 console.log(message.reply('Playing ( `' + moviename + '` )...'));
@@ -197,7 +203,7 @@ streamer.client.on('messageCreate', async (message) => {
                         cmdChannelId: message.channel.id
                     }
                     
-                    const streamLinkUdpConn = await streamer.createStream();
+                    const streamLinkUdpConn = await streamer.createStream(o);
                 
                     switch (true) {
                         case validateTiktokVideoURL(link):
@@ -269,7 +275,7 @@ streamer.client.on('messageCreate', async (message) => {
                     cmdChannelId: message.channel.id
                 }
                 
-                const streamYoutubeTitleUdpConn = await streamer.createStream();
+                const streamYoutubeTitleUdpConn = await streamer.createStream(streamOpts);
                 const ytUrlFromTitle = await ytPlayTitle(title);
                 if(ytUrlFromTitle) {
                     message.reply('**Playing...**');
