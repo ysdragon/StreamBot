@@ -1,16 +1,16 @@
 # StreamBot
 
-This is a Discord selfbot that allows streaming movies, videos, and streams from YouTube/Tiktok and direct links to a Discord voice channel.
+This is a Discord selfbot that allows streaming videos, and streams from YouTube/Tiktok and direct links to a Discord voice channel.
 
 ## 🧐Features
 
-- Stream movies/videos from a local folder.
+- Stream videos from a local folder.
 - Stream and search for YouTube videos using titles.
 - Stream (YouTube videos/live streams, Tiktok videos/live streams) by link.
 - Stream arbitrary links (video files, live streams, etc.).
 - Playback commands: play, playlink, ytplay, pause, resume, stop.
-- List available movies.
-- Refresh the movie list.
+- List available videos.
+- Refresh the video list.
 - Get playback status.
 
 ## Requirements
@@ -44,15 +44,15 @@ bun run start
 ## 🛠️ Commands
 
 ```
-play <movie name> - Play a movie from the local folder.
+play <video name> - Play a video from the local folder.
 playlink <url> - Play a (YouTube video/live stream, TikTok video/live stream, direct link).
 ytplay <query> - Play a YouTube video from a title query.
 ytsearch <query> - Search for a YouTube video using a title query.
 stop - Stop the current playback.
 pause - Pause the current playback.
 resume - Resume playback.
-list - List available movies.
-refresh - Refresh the movie list.
+list - List available videos.
+refresh - Refresh the video list.
 status - Get current playback status.
 help - Show help message.
 ```
@@ -69,7 +69,7 @@ Configuration is done via `config.json`:
   "commandChannel": "<command channel id>",
   "videoChannel": "<voice channel id>",
   "adminIds": ["<admin id>"],
-  "movieFolder": "<movies folder path>",
+  "videoFolder": "<videos folder path>",
   "previewCache": "/tmp/preview-cache", // here you can set the preview thumbnails cache folder
   "streamOpts": {
     "width": 1920, // Resolution width
@@ -81,10 +81,10 @@ Configuration is done via `config.json`:
     "videoCodec": "H264" // Stream/video codec can be set to either (H264), (H265) or (VP8)
   },
   "server": {
-    "enabled": false, // if you want to enable the movies server
+    "enabled": false, // if you want to enable the video server
     "username": "admin", // here you can set the username
     "password": "admin",  // here you can set the password
-    "port": 8080 // here you can set a port to listen the movies server site
+    "port": 8080 // here you can set a port to listen the video server site
   }
 }
 ```
@@ -94,11 +94,11 @@ Check the [Get token wiki](https://github.com/ysdragon/StreamBot/wiki/Get-Discor
 
 ## Server
 
-An optional basic HTTP server can be enabled to manage the movie library:
+An optional basic HTTP server can be enabled to manage the video library:
 
-- List movies
-- Upload movies
-- Delete movies
+- List videos
+- Upload videos
+- Delete videos
 - Generate video preview thumbnails
 
 Protected by HTTP basic auth.
@@ -106,7 +106,6 @@ Protected by HTTP basic auth.
 ## Todo
 
 - [x]  Adding ytsearch and ytplay commands   
-- [ ]  Play from torrents  
 
 # Contributing
 Public contributions are welcome!  
