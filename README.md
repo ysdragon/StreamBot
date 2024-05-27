@@ -69,7 +69,7 @@ Configuration is done via `config.json`:
   "commandChannel": "<command channel id>",
   "videoChannel": "<voice channel id>",
   "adminIds": ["<admin id>"],
-  "videoFolder": "<videos folder path>",
+  "videosFolder": "<videos folder path>",
   "previewCache": "<here you can set the preview thumbnails cache folder>",
   "streamOpts": {
     "width": 1920,
