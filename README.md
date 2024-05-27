@@ -119,4 +119,4 @@ This bot may violate Discord's Terms of Service. Use at your own risk.
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/ysdragon/StreamBot/blob/main/LICENSE) file for details.
