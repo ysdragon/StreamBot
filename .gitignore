@@ -1,2 +1,6 @@
 
 LICENSE
+node_modules/
+dist/
+src/config.json
+bun.lockb
