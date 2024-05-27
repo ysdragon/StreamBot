@@ -116,9 +116,8 @@ You can create a [new issue](https://github.com/ysdragon/StreamBot/issues/new) f
 
 This bot may violate Discord's Terms of Service. Use at your own risk.
 
-## ابراء الذمة
-هذا المشروع يُعبر عن التزامي الشخصي بالقيم الأخلاقية والمبادئ الدينية. أتبرأ من أي استخدام غير أخلاقي لهذا المشروع أمام الله، وأؤكد التزامي بالقيم التي تحترم الأخلاقيات والمبادئ الدينية.
-
+## إبراء الذمة
+أتبرأ من أي استخدام غير أخلاقي لهذا المشروع أمام الله.
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](https://github.com/ysdragon/StreamBot/blob/main/LICENSE) file for details.
