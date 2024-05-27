@@ -63,28 +63,28 @@ Configuration is done via `config.json`:
 
 ```json
 {
-  "token": "<user bot token>", // discord user token
-  "prefix": "$", // bot prefix 
+  "token": "<user bot token>",
+  "prefix": "<here you can set the preview thumbnails cache folder>",
   "guildId": "<guild id (server id)>",
   "commandChannel": "<command channel id>",
   "videoChannel": "<voice channel id>",
   "adminIds": ["<admin id>"],
   "videoFolder": "<videos folder path>",
-  "previewCache": "/tmp/preview-cache", // here you can set the preview thumbnails cache folder
+  "previewCache": "<here you can set the preview thumbnails cache folder>",
   "streamOpts": {
-    "width": 1920, // Resolution width
-    "height": 1080, // Resolution height 
-    "fps": 30,  // Stream fps
-    "bitrateKbps": 8000, // Stream bitrate in kb
-    "maxBitrateKbps": 2500, // An option to change the max bitrate value in the payload
-    "hardware_acc": false, // Enable or disable stream hardware acceleration
-    "videoCodec": "H264" // Stream/video codec can be set to either (H264), (H265) or (VP8)
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "bitrateKbps": 2500,
+    "maxBitrateKbps": 2500,
+    "hardware_acc": false,
+    "videoCodec": "<Stream/video codec can be set to either (H264), (H265) or (VP8)>"
   },
   "server": {
-    "enabled": false, // if you want to enable the video server
-    "username": "admin", // here you can set the username
-    "password": "admin",  // here you can set the password
-    "port": 8080 // here you can set a port to listen the video server site
+    "enabled": false,
+    "username": "<here you can set the username>",
+    "password": "<here you can set the password>",
+    "port": 8080
   }
 }
 ```
