@@ -1,5 +1,5 @@
 
-// File List and Upload to config.movieFolder
+// File List and Upload to config.videosFolder
 import config from "./config.json";
 import express from "express";
 import multer from "multer";
@@ -18,7 +18,7 @@ const port = config.server.port || '8080';
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, config.movieFolder);
+        cb(null, config.videosFolder);
     }, 
     filename: (req, file, cb) => {
         cb(null, file.originalname);
@@ -60,7 +60,7 @@ app.post("/api/upload", upload.single("file"), (req, res) => {
 app.post("/api/remote_upload", upload.single("link"), async (req, res) => {
     const link = req.body.link;
     const filename = link.substring(link.lastIndexOf('/') + 1);
-    const filepath = path.join(config.movieFolder, filename);
+    const filepath = path.join(config.videosFolder, filename);
   
     try {
       const response = await axios.get(link, { responseType: 'stream', httpsAgent: agent });
@@ -103,7 +103,7 @@ app.post("/api/remote_upload", upload.single("link"), async (req, res) => {
     }
 })
 
-// Simple UI to show all files in config.movieFolder
+// Simple UI to show all files in config.videosFolder
 const template_style = `
     <!-- provide a bootstrap style by using CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.1/css/bootstrap.min.css" integrity="sha512-Z/def5z5u2aR89OuzYcxmDJ0Bnd5V1cKqBEbvLOiUNWdg9PQeXVvXLI90SE4QOHGlfLqUnDNVAYyZi8UwUTmWQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -194,7 +194,7 @@ const prettySize = (size) => {
 }
 
 app.get("/", (req, res) => {
-    fs.readdir(config.movieFolder, (err, files) => {
+    fs.readdir(config.videosFolder, (err, files) => {
         if (err) {
             console.log(err);
         } else {
@@ -202,7 +202,7 @@ app.get("/", (req, res) => {
             const template = `
             ${template_style}
             <div class="container">
-              <h1>File List</h1>
+              <h1>Video List</h1>
               <div class="table-responsive">
                 <table class="table table-striped table-sm">
                   <thead>
@@ -216,7 +216,7 @@ app.get("/", (req, res) => {
                   </thead>
                   <tbody>
                     ${files.map(file => {
-                      const stats = fs.statSync(path.join(config.movieFolder, file));
+                      const stats = fs.statSync(path.join(config.videosFolder, file));
                       return `
                         <tr>
                           <td>${file}</td>
@@ -305,7 +305,7 @@ async function ffmpegScreenshot(video) {
                 return;
             }
             console.log(`Taking screenshot ${i+1} of ${video} at ${ts[i]}`)
-            ffmpeg(`${config.movieFolder}/${video}`).on("end", () => {
+            ffmpeg(`${config.videosFolder}/${video}`).on("end", () => {
                 takeOne(i + 1);
             }).on("error", (err) => {
                 ffmpegRunning[video] = false;
@@ -377,14 +377,14 @@ const stringify = (obj) => {
 app.get("/preview/:file", (req, res) => {
     const file = req.params.file;
     // check if file exists
-    if (!fs.existsSync(path.join(config.movieFolder, file))) {
+    if (!fs.existsSync(path.join(config.videosFolder, file))) {
         res.status(404).send("Not Found");
         return;
     }
 
     // get metadata of the file and format it to a table with bootstrap using node-fluent-ffmpeg
     const ffmpeg = require("fluent-ffmpeg");
-    ffmpeg.ffprobe(`${config.movieFolder}/${file}`, (err, metadata) => {
+    ffmpeg.ffprobe(`${config.videosFolder}/${file}`, (err, metadata) => {
         if (err) {
             console.log(err);
             res.status(500).send("Internal Server Error");
@@ -439,12 +439,12 @@ app.get("/preview/:file", (req, res) => {
 app.get("/delete/:file", (req, res) => {
     const file = req.params.file;
     // check if file exists
-    if (!fs.existsSync(path.join(config.movieFolder, file))) {
+    if (!fs.existsSync(path.join(config.videosFolder, file))) {
         res.status(404).send("Not Found");
         return;
     }
 
-    fs.unlink(path.join(config.movieFolder, file) ,function(err){
+    fs.unlink(path.join(config.videosFolder, file) ,function(err){
         if(err) return console.log(err);
         console.log('file ( ' + file + ' ) deleted successfully');
         const template = `

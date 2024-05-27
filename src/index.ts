@@ -18,17 +18,17 @@ setStreamOpts(
 
 const prefix = config.prefix;
 
-const moviesFolder = config.movieFolder || './movies';
+const videosFolder = config.videosFolder || './videos';
 
-const movieFiles = fs.readdirSync(moviesFolder);
-let movies = movieFiles.map(file => {
+const videoFiles = fs.readdirSync(videosFolder);
+let videos = videoFiles.map(file => {
   const fileName = path.parse(file).name;
   // replace space with _
-  return { name: fileName.replace(/ /g, ''), path: path.join(moviesFolder, file) };
+  return { name: fileName.replace(/ /g, ''), path: path.join(videosFolder, file) };
 });
 
-// print out all movies
-console.log(`Available movies:\n${movies.map(m => m.name).join('\n')}`);
+// print out all videos
+console.log(`Available videos:\n${videos.map(m => m.name).join('\n')}`);
 
 const status_idle = () =>  {
     return new CustomStatus()
@@ -110,12 +110,12 @@ streamer.client.on('messageCreate', async (message) => {
                     return;
                 }
                 
-                // get movie name and find movie file
-                let moviename = args.shift()
-                let movie = movies.find(m => m.name == moviename);
+                // get video name and find video file
+                let videoname = args.shift()
+                let video = videos.find(m => m.name == videoname);
                 
-                if (!movie) {
-                    message.reply('Movie not found');
+                if (!video) {
+                    message.reply('video not found');
                     return;
                 }
                 
@@ -165,10 +165,10 @@ streamer.client.on('messageCreate', async (message) => {
                     cmdChannelId: message.channel.id
                 }
                 const streamUdpConn = await streamer.createStream();
-                playVideo(movie.path, streamUdpConn, options);
-                message.reply('Playing ( `' + moviename + '` )...');
-                console.log(message.reply('Playing ( `' + moviename + '` )...'));
-                streamer.client.user?.setActivity(status_watch(moviename) as unknown as ActivityOptions)
+                playVideo(video.path, streamUdpConn, options);
+                message.reply('Playing ( `' + videoname + '` )...');
+                console.log(message.reply('Playing ( `' + videoname + '` )...'));
+                streamer.client.user?.setActivity(status_watch(videoname) as unknown as ActivityOptions)
                 break;
                 case 'playlink':
                     if (streamStatus.joined) {
@@ -351,30 +351,30 @@ streamer.client.on('messageCreate', async (message) => {
                 }
                 break;
             case 'list':
-                message.reply(`Available movies:\n${movies.map(m => m.name).join('\n')}`);
+                message.reply(`Available videos:\n${videos.map(m => m.name).join('\n')}`);
                 break;
             case 'status':
                 message.reply(`Joined: ${streamStatus.joined}\nPlaying: ${streamStatus.playing}`);
                 break;
             case 'refresh':
-                // refresh movie list
-                const movieFiles = fs.readdirSync(moviesFolder);
-                movies = movieFiles.map(file => {
+                // refresh video list
+                const videoFiles = fs.readdirSync(videosFolder);
+                videos = videoFiles.map(file => {
                     const fileName = path.parse(file).name;
                     // replace space with _
-                    return { name: fileName.replace(/ /g, ''), path: path.join(moviesFolder, file) };
+                    return { name: fileName.replace(/ /g, ''), path: path.join(videosFolder, file) };
                 });
-                message.reply('Movie list refreshed ' + movies.length + ' movies found.\n' + movies.map(m => m.name).join('\n'));
+                message.reply('video list refreshed ' + videos.length + ' videos found.\n' + videos.map(m => m.name).join('\n'));
                 break;
             case 'help':
                 const commands = {
                     play: {
-                      description: 'Play a movie',
-                      usage: 'play [movie name]',
+                      description: 'Play a video',
+                      usage: 'play [video name]',
                     },
 
                     playlink: {
-                        description: 'Play a movie/video/stream direct link or from youtube/tiktok link',
+                        description: 'Play a video/video/stream direct link or from youtube/tiktok link',
                         usage: 'playlink [link]',
                     },
 
@@ -389,27 +389,27 @@ streamer.client.on('messageCreate', async (message) => {
                     },
 
                     stop: {
-                      description: 'Stop the current playing movie',
+                      description: 'Stop the current playing video',
                       usage: 'stop'
                     },  
                     
                     pause: {
-                      description: 'Pause the currently playing movie',
+                      description: 'Pause the currently playing video',
                       usage: 'pause'
                     },
                     
                     resume: {
-                      description: 'Resume the paused movie',
+                      description: 'Resume the paused video',
                       usage: 'resume'
                     },
 
                     list: {
-                        description: 'Get available movie list',
+                        description: 'Get available video list',
                         usage: 'list'
                     },
 
                     refresh: {
-                        description: 'Refresh movie list.',
+                        description: 'Refresh video list.',
                         usage: 'refresh'
                     },
 

@@ -6,7 +6,7 @@
     "commandChannel": "",
     "videoChannel": "",
     "adminIds": [""],
-    "movieFolder": "/movies",
+    "videosFolder": "./videos",
     "previewCache": "/tmp/preview-cache",
     "streamOpts": {
         "width": 1920,
