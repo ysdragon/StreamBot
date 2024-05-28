@@ -64,7 +64,7 @@ Configuration is done via `config.json`:
 ```json
 {
   "token": "<user bot token>",
-  "prefix": "<here you can set the preview thumbnails cache folder>",
+  "prefix": "<here you can set the bot prefix>",
   "guildId": "<guild id (server id)>",
   "commandChannel": "<command channel id>",
   "videoChannel": "<voice channel id>",
