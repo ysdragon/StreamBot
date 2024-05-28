@@ -5,7 +5,7 @@ FROM node:21-alpine3.18
 WORKDIR /home/bun/app
 
 # Install important deps
-RUN apk --no-cache add --virtual .builds-deps build-base python3 gcompat
+RUN apk --no-cache add --virtual .builds-deps build-base python3 gcompat ffmpeg
 
 # Install bun
 ADD https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip bun-linux-x64.zip
