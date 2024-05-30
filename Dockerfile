@@ -1,34 +1,32 @@
-# Use the official nodejs alpine image as the base image
-FROM node:21-alpine3.18
+# Use the official nodejs lts alpine image as the base image
+FROM node:lts-alpine
 
 # Set the working directory
 WORKDIR /home/bun/app
 
 # Install important deps
-RUN apk --no-cache add --virtual .builds-deps build-base python3 gcompat ffmpeg
+RUN apk --no-cache add --virtual .builds-deps build-base python3 ffmpeg
 
-# Install bun
-ADD https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip bun-linux-x64.zip
-RUN unzip bun-linux-x64.zip && chmod +x ./bun-linux-x64/bun && cp bun-linux-x64/bun /usr/local/bin/
-RUN rm -rf bun-linux-x64.zip ./bun-linux-x64
+# Install pnpm
+RUN npm install pnpm -g
 
 # Copy package.json
 COPY package.json ./
 
 # Install dependencies
-RUN bun install
+RUN pnpm install
 
 # Copy the rest of the application code
 COPY . .
 
 # Build the application
-RUN bun run build
+RUN pnpm run build
 
 # Specify the port number the container should expose
 EXPOSE 3000
 
-# Create Videos folder
+# Create videos folder
 RUN mkdir -p ./videos
 
 # Command to run the application
-CMD ["bun", "run", "start"]
+CMD ["pnpm", "run", "start"]
