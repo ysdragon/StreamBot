@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "start": "node ./dist/index.js",
-    "server": "bun ./dist/server.js",
+    "server": "node ./dist/server.js",
     "build": "npx tsc",
     "watch": "npx tsc -w"
   },
