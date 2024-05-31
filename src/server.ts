@@ -1,6 +1,6 @@
 
 // File List and Upload to config.videosFolder
-import config from "./config.json";
+import config from "../config.json";
 import express from "express";
 import multer from "multer";
 import path from "path";
