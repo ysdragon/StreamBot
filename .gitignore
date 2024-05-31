@@ -2,5 +2,5 @@
 LICENSE
 node_modules/
 dist/
-src/config.json
+config.json
 bun.lockb
