@@ -2,7 +2,7 @@
 FROM node:lts-alpine
 
 # Set the working directory
-WORKDIR /home/bun/app
+WORKDIR /home/bots/StreamBot
 
 # Install important deps
 RUN apk --no-cache add --virtual .builds-deps build-base python3 ffmpeg
