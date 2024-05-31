@@ -465,7 +465,7 @@ async function playVideo(video: string, udpConn: MediaUdp, options: any) {
         const res = await videoStream;
         console.log("Finished playing video");
     } catch (error) {
-
+        console.log("Error playing video: ", error)
     } finally {
         udpConn.mediaConnection.setSpeaking(false);
         udpConn.mediaConnection.setVideoStatus(false);
@@ -606,9 +606,8 @@ async function fetchTiktokUrl(url: string) {
         const liveUrl = await tiktokLive.getLiveUrl();
 
         return liveUrl;
-        //console.log(`Live Stream URL: ${liveUrl}`); // this was for debugging
     } catch (error) {
-        //console.error('An error occurred!); // this was for debugging
+        console.error("Error playing video: ", error);
     }
 }
 
