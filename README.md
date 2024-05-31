@@ -19,21 +19,24 @@ This is a Discord selfbot that allows streaming videos, and streams from YouTube
 
 ## 🛠️ Installation Steps:
 
-This project is [hosted on github](https://github.com/ysdragon/StreamBot). You can clone this project directly using this command:
+This project is [hosted on github](https://github.com/ysdragon/StreamBot).
+1. You can clone this project directly using this command:
 
 ```
 git clone https://github.com/ysdragon/StreamBot
 ```
 
-Use [bun](https://bun.sh) to install all the dependencies:
+2. Use [bun](https://bun.sh) to install all the dependencies:
 ```
 bun install 
 ```
 
-Build the artifacts from source:
+3. Build the artifacts from source:
 ```
 bun run build
 ```
+
+4. Rename [config.json.example](https://github.com/ysdragon/StreamBot/blob/main/config.json.example) to config.json
 
 ## Usage
 Start the built artifacts:
