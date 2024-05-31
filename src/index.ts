@@ -1,5 +1,5 @@
-import { Client, TextChannel, CustomStatus, ActivityOptions, WebEmbed } from "discord.js-selfbot-v13";
-import { command, streamLivestreamVideo, MediaUdp, setStreamOpts, streamOpts, Streamer } from "@dank074/discord-video-stream";
+import { Client, TextChannel, CustomStatus, ActivityOptions } from "discord.js-selfbot-v13";
+import { command, streamLivestreamVideo, MediaUdp, StreamOptions, Streamer } from "@dank074/discord-video-stream";
 import config from "./config.json";
 import fs from 'fs';
 import path from 'path';
@@ -12,9 +12,14 @@ const streamer = new Streamer(new Client());
 const tiktokVideo = new TiktokVideo();
 const tiktokLive = new TiktokLive();
 
-setStreamOpts(
-    config.streamOpts
-)
+const streamOpts: StreamOptions = {
+    height: config.streamOpts.height, 
+    fps: config.streamOpts.fps, 
+    bitrateKbps: config.streamOpts.bitrateKbps,
+    maxBitrateKbps: config.streamOpts.maxBitrateKbps, 
+    hardwareAcceleratedDecoding: config.streamOpts.hardware_acceleration,
+    videoCodec: config.streamOpts.videoCodec === 'H264' ? 'H264' : 'VP8'
+}
 
 const prefix = config.prefix;
 
@@ -155,7 +160,7 @@ streamer.client.on('messageCreate', async (message) => {
 
                 options['-ss'] = startTimeSeconds;
 
-                await streamer.joinVoice(guildId, channelId);
+                await streamer.joinVoice(guildId, channelId, streamOpts);
                 streamStatus.joined = true;
                 streamStatus.playing = false;
                 streamStatus.starttime = startTime;
@@ -164,7 +169,7 @@ streamer.client.on('messageCreate', async (message) => {
                     channelId: channelId,
                     cmdChannelId: message.channel.id
                 }
-                const streamUdpConn = await streamer.createStream();
+                const streamUdpConn = await streamer.createStream(streamOpts);
                 playVideo(video.path, streamUdpConn, options);
                 message.reply('Playing ( `' + videoname + '` )...');
                 console.log(message.reply('Playing ( `' + videoname + '` )...'));
@@ -186,7 +191,7 @@ streamer.client.on('messageCreate', async (message) => {
                     let linkstartTime = args.shift() || '';
                     let linkOptions = {}
                     
-                    await streamer.joinVoice(guildId, channelId);
+                    await streamer.joinVoice(guildId, channelId, streamOpts);
                 
                     streamStatus.joined = true;
                     streamStatus.playing = false;
@@ -197,7 +202,7 @@ streamer.client.on('messageCreate', async (message) => {
                         cmdChannelId: message.channel.id
                     }
                     
-                    const streamLinkUdpConn = await streamer.createStream();
+                    const streamLinkUdpConn = await streamer.createStream(streamOpts);
                 
                     switch (true) {
                         case validateTiktokVideoURL(link):
@@ -258,7 +263,7 @@ streamer.client.on('messageCreate', async (message) => {
                 let titlestartTime = args.shift() || '';
                 let titleOptions = {}
                 
-                await streamer.joinVoice(guildId, channelId);
+                await streamer.joinVoice(guildId, channelId, streamOpts);
             
                 streamStatus.joined = true;
                 streamStatus.playing = false;
@@ -269,7 +274,7 @@ streamer.client.on('messageCreate', async (message) => {
                     cmdChannelId: message.channel.id
                 }
                 
-                const streamYoutubeTitleUdpConn = await streamer.createStream();
+                const streamYoutubeTitleUdpConn = await streamer.createStream(streamOpts);
                 const ytUrlFromTitle = await ytPlayTitle(title);
                 if(ytUrlFromTitle) {
                     message.reply('**Playing...**');

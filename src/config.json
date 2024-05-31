@@ -1,5 +1,4 @@
 {
-
     "token": "",
     "prefix": "$",
     "guildId": "",
@@ -9,12 +8,12 @@
     "videosFolder": "./videos",
     "previewCache": "/tmp/preview-cache",
     "streamOpts": {
-        "width": 1920,
-        "height": 1080,
+        "width": 1280,
+        "height": 720,
         "fps": 30,
-        "bitrateKbps": 2000,
+        "bitrateKbps": 1000,
         "maxBitrateKbps": 2500,
-        "hardware_acc": false,
+        "hardware_acceleration": false,
         "videoCodec": "H264"
     },
     "server": {
