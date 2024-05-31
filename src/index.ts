@@ -111,16 +111,15 @@ streamer.client.on('messageCreate', async (message) => {
         switch (user_cmd) {
             case 'play':
                 if (streamStatus.joined) {
-                    message.reply('Already joined');
+                    message.reply('** Already joined **');
                     return;
                 }
-
                 // get video name and find video file
                 let videoname = args.shift()
                 let video = videos.find(m => m.name == videoname);
 
                 if (!video) {
-                    message.reply('video not found');
+                    message.reply('** Video not found **');
                     return;
                 }
 
@@ -132,7 +131,7 @@ streamer.client.on('messageCreate', async (message) => {
                 const startTimeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/;
 
                 if (startTime && !startTimeRegex.test(startTime)) {
-                    message.reply('Invalid start time format');
+                    message.reply('** Invalid start time format **');
                     return;
                 }
 
@@ -151,7 +150,7 @@ streamer.client.on('messageCreate', async (message) => {
                 }
 
                 if (isNaN(hours) || isNaN(minutes) || isNaN(seconds)) {
-                    message.reply('Invalid start time');
+                    message.reply('** Invalid start time **');
                     return;
                 }
 
@@ -162,7 +161,7 @@ streamer.client.on('messageCreate', async (message) => {
 
                 await streamer.joinVoice(guildId, channelId, streamOpts);
                 streamStatus.joined = true;
-                streamStatus.playing = false;
+                streamStatus.playing = true;
                 streamStatus.starttime = startTime;
                 streamStatus.channelInfo = {
                     guildId: guildId,
@@ -171,8 +170,8 @@ streamer.client.on('messageCreate', async (message) => {
                 }
                 const streamUdpConn = await streamer.createStream(streamOpts);
                 playVideo(video.path, streamUdpConn, options);
-                message.reply('Playing ( `' + videoname + '` )...');
-                console.log(message.reply('Playing ( `' + videoname + '` )...'));
+                message.reply('** Playing ( `' + videoname + '` )... **');
+                console.log('Playing ( `' + videoname + '` )...');
                 streamer.client.user?.setActivity(status_watch(videoname) as unknown as ActivityOptions)
                 break;
             case 'playlink':
@@ -194,7 +193,7 @@ streamer.client.on('messageCreate', async (message) => {
                 await streamer.joinVoice(guildId, channelId, streamOpts);
 
                 streamStatus.joined = true;
-                streamStatus.playing = false;
+                streamStatus.playing = true;
                 streamStatus.starttime = linkstartTime;
                 streamStatus.channelInfo = {
                     guildId: guildId,
@@ -215,6 +214,7 @@ streamer.client.on('messageCreate', async (message) => {
                             }
                         } catch (error) {
                             message.reply('An error occurred!');
+                            console.log("Error: ", error);
                         }
                         break;
 
@@ -227,7 +227,8 @@ streamer.client.on('messageCreate', async (message) => {
                                 streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
                             }
                         } catch (error) {
-                            message.reply('An error occurred!');
+                            message.reply('**An error occurred!**');
+                            console.log("Error: ", error);
                         }
                         break;
                     case ytdl.validateURL(link):
@@ -242,7 +243,7 @@ streamer.client.on('messageCreate', async (message) => {
                         break;
                     default:
                         playVideo(link, streamLinkUdpConn, linkOptions);
-                        message.reply('Playing...');
+                        message.reply('**Playing...**');
                         streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
                 }
 
@@ -266,7 +267,7 @@ streamer.client.on('messageCreate', async (message) => {
                 await streamer.joinVoice(guildId, channelId, streamOpts);
 
                 streamStatus.joined = true;
-                streamStatus.playing = false;
+                streamStatus.playing = true;
                 streamStatus.starttime = titlestartTime;
                 streamStatus.channelInfo = {
                     guildId: guildId,
@@ -338,7 +339,7 @@ streamer.client.on('messageCreate', async (message) => {
                 message.reply(`Play time: ${h}:${m}:${s}`);
                 break;
             case 'pause':
-                if (!streamStatus.playing) {
+                if (streamStatus.playing) {
                     command?.kill("SIGSTOP");
                     message.reply('Paused');
                     streamStatus.playing = false;
@@ -352,7 +353,7 @@ streamer.client.on('messageCreate', async (message) => {
                     message.reply('Resumed');
                     streamStatus.playing = true;
                 } else {
-                    message.reply('Not playing');
+                    message.reply('Already Playing!');
                 }
                 break;
             case 'list':
