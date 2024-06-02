@@ -25,6 +25,11 @@ const prefix = config.prefix;
 
 const videosFolder = config.videosFolder || './videos';
 
+// create videos folder if not exists
+if (!fs.existsSync(videosFolder)) {
+    fs.mkdirSync(videosFolder);
+}
+
 const videoFiles = fs.readdirSync(videosFolder);
 let videos = videoFiles.map(file => {
     const fileName = path.parse(file).name;
