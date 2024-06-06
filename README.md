@@ -57,6 +57,7 @@ resume - Resume playback.
 list - List available videos.
 refresh - Refresh the video list.
 status - Get current playback status.
+preview - Generate and obtain preview thumbnails of a specific video.
 help - Show help message.
 ```
 

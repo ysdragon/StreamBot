@@ -1,4 +1,4 @@
-import { Client, TextChannel, CustomStatus, ActivityOptions } from "discord.js-selfbot-v13";
+import { Client, TextChannel, CustomStatus, ActivityOptions, MessageAttachment } from "discord.js-selfbot-v13";
 import { command, streamLivestreamVideo, MediaUdp, StreamOptions, Streamer } from "@dank074/discord-video-stream";
 import config from "../config.json";
 import fs from 'fs';
@@ -377,6 +377,30 @@ streamer.client.on('messageCreate', async (message) => {
                 });
                 message.reply('video list refreshed ' + videos.length + ' videos found.\n' + videos.map(m => m.name).join('\n'));
                 break;
+            case 'preview':
+                let vid = args.shift();
+                let vid_name = videos.find(m => m.name === vid);
+
+                if (!vid_name) {
+                    message.reply('** Video not found **');
+                    return;
+                }
+
+                try {
+                    const thumbnails = await ffmpegScreenshot(`${vid_name.name}${path.extname(vid_name.path)}`);
+                    if (thumbnails.length > 0) {
+                        const attachments: MessageAttachment[] = [];
+                        for (const screenshotPath of thumbnails) {
+                            attachments.push(new MessageAttachment(screenshotPath));
+                        }
+                        await message.reply({ files: attachments });
+                    } else {
+                        message.reply('Failed to generate preview thumbnails.');
+                    }
+                } catch (error) {
+                    console.error('Error generating preview preview thumbnails:', error);
+                }
+                break;
             case 'help':
                 const commands = {
                     play: {
@@ -427,6 +451,11 @@ streamer.client.on('messageCreate', async (message) => {
                     status: {
                         description: 'Get bot status.',
                         usage: 'status'
+                    },
+
+                    preview: {
+                        description: 'Generate and obtain preview thumbnails of a specific video.',
+                        usage: 'preview [video name]'
                     },
 
                     help: {
@@ -625,6 +654,56 @@ function validateTiktokLiveURL(url: string) {
 function validateTiktokVideoURL(url: string) {
     const tiktokVideoUrlRegex = /https:\/\/(www\.)?tiktok\.com\/@[^/]+\/video\/\d+/i;
     return tiktokVideoUrlRegex.test(url);
+}
+
+let ffmpegRunning: { [key: string]: boolean } = {};
+
+async function ffmpegScreenshot(video: string): Promise<string[]> {
+    return new Promise<string[]>((resolve, reject) => {
+        if (ffmpegRunning[video]) {
+            // wait for ffmpeg to finish
+            let wait = () => {
+                if (ffmpegRunning[video] == false) {
+                    resolve(images);
+                }
+                setTimeout(wait, 100);
+            }
+            wait();
+            return;
+        }
+        ffmpegRunning[video] = true;
+        const ffmpeg = require("fluent-ffmpeg");
+        const ts = ['10%', '30%', '50%', '70%', '90%'];
+        const images: string[] = [];
+
+        const takeScreenshots = (i: number) => {
+            if (i >= ts.length) {
+                ffmpegRunning[video] = false;
+                resolve(images);
+                return;
+            }
+            console.log(`Taking screenshot ${i + 1} of ${video} at ${ts[i]}`);
+            ffmpeg(`${config.videosFolder}/${video}`)
+                .on("end", () => {
+                    const screenshotPath = `${config.previewCache}/${video}-${i + 1}.jpg`;
+                    images.push(screenshotPath);
+                    takeScreenshots(i + 1);
+                })
+                .on("error", (err: any) => {
+                    ffmpegRunning[video] = false;
+                    reject(err);
+                })
+                .screenshots({
+                    count: 1,
+                    filename: `${video}-${i + 1}.jpg`,
+                    timestamps: [ts[i]],
+                    folder: config.previewCache,
+                    size: "640x480"
+                });
+        };
+
+        takeScreenshots(0);
+    });
 }
 
 // run server if enabled in config
