@@ -68,9 +68,7 @@ let streamStatus = {
         guildId: '',
         channelId: '',
         cmdChannelId: ''
-    },
-    starttime: "00:00:00",
-    timemark: '',
+    }
 }
 
 streamer.client.on('voiceStateUpdate', (oldState, newState) => {
@@ -128,55 +126,18 @@ streamer.client.on('messageCreate', async (message) => {
                     return;
                 }
 
-                // get start time from args "hh:mm:ss"
-                let startTime = args.shift() || '';
-                let options = {}
-                // check if start time is valid
-                // Validate start time format
-                const startTimeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/;
-
-                if (startTime && !startTimeRegex.test(startTime)) {
-                    message.reply('** Invalid start time format **');
-                    return;
-                }
-
-                // Split and parse start time  
-                const startTimeParts = startTime!.split(':');
-
-
-                let hours = 0;
-                let minutes = 0;
-                let seconds = 0;
-
-                if (startTimeParts.length === 3) {
-                    hours = parseInt(startTimeParts[0], 10);
-                    minutes = parseInt(startTimeParts[1], 10);
-                    seconds = parseInt(startTimeParts[2], 10);
-                }
-
-                if (isNaN(hours) || isNaN(minutes) || isNaN(seconds)) {
-                    message.reply('** Invalid start time **');
-                    return;
-                }
-
-                // Calculate total seconds
-                const startTimeSeconds = hours * 3600 + minutes * 60 + seconds;
-
-                options['-ss'] = startTimeSeconds;
-
                 await streamer.joinVoice(guildId, channelId, streamOpts);
                 streamStatus.joined = true;
                 streamStatus.playing = true;
-                streamStatus.starttime = startTime;
                 streamStatus.channelInfo = {
                     guildId: guildId,
                     channelId: channelId,
                     cmdChannelId: message.channel.id
                 }
                 const streamUdpConn = await streamer.createStream(streamOpts);
-                playVideo(video.path, streamUdpConn, options);
+                playVideo(video.path, streamUdpConn);
                 message.reply('** Playing ( `' + videoname + '` )... **');
-                console.log('Playing ( `' + videoname + '` )...');
+                console.log('Playing ( ' + videoname + ' )...');
                 streamer.client.user?.setActivity(status_watch(videoname) as unknown as ActivityOptions)
                 break;
             case 'playlink':
@@ -192,14 +153,10 @@ streamer.client.on('messageCreate', async (message) => {
                     return;
                 }
 
-                let linkstartTime = args.shift() || '';
-                let linkOptions = {}
-
                 await streamer.joinVoice(guildId, channelId, streamOpts);
 
                 streamStatus.joined = true;
                 streamStatus.playing = true;
-                streamStatus.starttime = linkstartTime;
                 streamStatus.channelInfo = {
                     guildId: guildId,
                     channelId: channelId,
@@ -213,7 +170,7 @@ streamer.client.on('messageCreate', async (message) => {
                         try {
                             const videoUrl = await tiktokVideo.getVideo(link);
                             if (videoUrl) {
-                                playVideo(videoUrl, streamLinkUdpConn, linkOptions);
+                                playVideo(videoUrl, streamLinkUdpConn);
                                 message.reply('**Playing...**');
                                 streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
                             }
@@ -227,7 +184,7 @@ streamer.client.on('messageCreate', async (message) => {
                         try {
                             const liveUrl = await fetchTiktokUrl(link);
                             if (liveUrl) {
-                                playVideo(liveUrl, streamLinkUdpConn, linkOptions);
+                                playVideo(liveUrl, streamLinkUdpConn);
                                 message.reply('**Playing ' + tiktokLive.user + '\'s live **');
                                 streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
                             }
@@ -242,12 +199,12 @@ streamer.client.on('messageCreate', async (message) => {
                         });
                         if (yturl) {
                             message.reply('**Playing...**');
-                            playVideo(yturl, streamLinkUdpConn, linkOptions);
+                            playVideo(yturl, streamLinkUdpConn);
                             streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
                         }
                         break;
                     default:
-                        playVideo(link, streamLinkUdpConn, linkOptions);
+                        playVideo(link, streamLinkUdpConn);
                         message.reply('**Playing...**');
                         streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
                 }
@@ -266,14 +223,10 @@ streamer.client.on('messageCreate', async (message) => {
                     return;
                 }
 
-                let titlestartTime = args.shift() || '';
-                let titleOptions = {}
-
                 await streamer.joinVoice(guildId, channelId, streamOpts);
 
                 streamStatus.joined = true;
                 streamStatus.playing = true;
-                streamStatus.starttime = titlestartTime;
                 streamStatus.channelInfo = {
                     guildId: guildId,
                     channelId: channelId,
@@ -284,7 +237,7 @@ streamer.client.on('messageCreate', async (message) => {
                 const ytUrlFromTitle = await ytPlayTitle(title);
                 if (ytUrlFromTitle) {
                     message.reply('**Playing...**');
-                    playVideo(ytUrlFromTitle, streamYoutubeTitleUdpConn, titleOptions);
+                    playVideo(ytUrlFromTitle, streamYoutubeTitleUdpConn);
                     streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
                 }
 
@@ -326,22 +279,6 @@ streamer.client.on('messageCreate', async (message) => {
                 command?.kill("SIGKILL");
                 console.log("Stopped playing")
                 message.reply('**Stopped playing.**');
-                break;
-            case 'playtime': //        not working correctly for now
-                let start = streamStatus.starttime.split(':');
-                let mark = streamStatus.timemark.split(':');
-                let h = parseInt(start[0]) + parseInt(mark[0]);
-                let m = parseInt(start[1]) + parseInt(mark[1]);
-                let s = parseInt(start[2]) + parseInt(mark[2]);
-                if (s >= 60) {
-                    m += 1;
-                    s -= 60;
-                }
-                if (m >= 60) {
-                    h += 1;
-                    m -= 60;
-                }
-                message.reply(`Play time: ${h}:${m}:${s}`);
                 break;
             case 'pause':
                 if (streamStatus.playing) {
@@ -484,81 +421,42 @@ streamer.client.on('messageCreate', async (message) => {
 
 streamer.client.login(config.token);
 
-let lastPrint = "";
-
-async function playVideo(video: string, udpConn: MediaUdp, options: any) {
+async function playVideo(video: string, udpConn: MediaUdp) {
     console.log("Started playing video");
-
     udpConn.mediaConnection.setSpeaking(true);
     udpConn.mediaConnection.setVideoStatus(true);
 
     try {
-        let videoStream = streamLivestreamVideo(video, udpConn, options);
-
-        command?.on('progress', handleProgress);
-
-        const res = await videoStream;
+        const videoStream = await streamLivestreamVideo(video, udpConn);
+        videoStream;
         console.log("Finished playing video");
     } catch (error) {
-        console.log("Error playing video: ", error)
+        console.log("Error playing video: ", error);
     } finally {
         udpConn.mediaConnection.setSpeaking(false);
         udpConn.mediaConnection.setVideoStatus(false);
         command?.kill("SIGKILL");
-        sendFinishMessage();
-        cleanupStreamStatus();
+        await sendFinishMessage();
+        await cleanupStreamStatus();
     }
 }
 
-function handleProgress(msg: any) {
-    if (shouldPrintTimemark(msg.timemark)) {
-        console.log(`Timemark: ${msg.timemark}`);
-        lastPrint = msg.timemark;
-    }
-
-    streamStatus.timemark = msg.timemark;
-}
-
-function shouldPrintTimemark(timemark: string): boolean {
-    if (!streamStatus.timemark) {
-        return true;
-    }
-
-    const last = parseTimemark(lastPrint);
-    const now = parseTimemark(timemark);
-
-    const lastSeconds = timeToSeconds(last);
-    const nowSeconds = timeToSeconds(now);
-
-    return nowSeconds - lastSeconds >= 10;
-}
-
-function parseTimemark(timemark: string): number[] {
-    return timemark.split(':').map(Number);
-}
-
-function timeToSeconds(time: number[]): number {
-    return time[2] + time[1] * 60 + time[0] * 3600;
-}
-
-function sendFinishMessage() {
+async function sendFinishMessage() {
     const channel = streamer.client.channels.cache.get(streamStatus.channelInfo.cmdChannelId) as TextChannel;
-    channel?.send('**Finished playing video.**');
+    await channel?.send("**Finished playing video.**");
 }
 
-function cleanupStreamStatus() {
+async function cleanupStreamStatus() {
     streamer.leaveVoice();
     streamer.client.user?.setActivity(status_idle() as unknown as ActivityOptions);
 
     streamStatus.joined = false;
     streamStatus.joinsucc = false;
     streamStatus.playing = false;
-    lastPrint = "";
-
     streamStatus.channelInfo = {
-        guildId: '',
-        channelId: '',
-        cmdChannelId: ''
+        guildId: "",
+        channelId: "",
+        cmdChannelId: "",
     };
 }
 
