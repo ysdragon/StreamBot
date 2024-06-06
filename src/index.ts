@@ -5,12 +5,8 @@ import fs from 'fs';
 import path from 'path';
 import ytdl from '@distube/ytdl-core';
 import yts from 'play-dl';
-import { TiktokVideo, TiktokLive } from "./util/Tiktok";
 
 const streamer = new Streamer(new Client());
-
-const tiktokVideo = new TiktokVideo();
-const tiktokLive = new TiktokLive();
 
 const streamOpts: StreamOptions = {
     height: config.streamOpts.height,
@@ -166,33 +162,6 @@ streamer.client.on('messageCreate', async (message) => {
                 const streamLinkUdpConn = await streamer.createStream(streamOpts);
 
                 switch (true) {
-                    case validateTiktokVideoURL(link):
-                        try {
-                            const videoUrl = await tiktokVideo.getVideo(link);
-                            if (videoUrl) {
-                                playVideo(videoUrl, streamLinkUdpConn);
-                                message.reply('**Playing...**');
-                                streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
-                            }
-                        } catch (error) {
-                            message.reply('An error occurred!');
-                            console.log("Error: ", error);
-                        }
-                        break;
-
-                    case validateTiktokLiveURL(link):
-                        try {
-                            const liveUrl = await fetchTiktokUrl(link);
-                            if (liveUrl) {
-                                playVideo(liveUrl, streamLinkUdpConn);
-                                message.reply('**Playing ' + tiktokLive.user + '\'s live **');
-                                streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
-                            }
-                        } catch (error) {
-                            message.reply('**An error occurred!**');
-                            console.log("Error: ", error);
-                        }
-                        break;
                     case ytdl.validateURL(link):
                         const yturl = await getVideoUrl(link).catch(error => {
                             console.error("Error:", error);
@@ -346,7 +315,7 @@ streamer.client.on('messageCreate', async (message) => {
                     },
 
                     playlink: {
-                        description: 'Play a video/video/stream direct link or from youtube/tiktok link',
+                        description: 'Play a video/video/stream direct link or from youtube link',
                         usage: 'playlink [link]',
                     },
 
@@ -525,33 +494,6 @@ async function ytSearch(title: string): Promise<string[]> {
         console.log('No videos found with the given title.');
         return [];
     }
-}
-
-
-async function fetchTiktokUrl(url: string) {
-    try {
-        // Set the TikTok URL you want to fetch information from
-        tiktokLive.url = url;
-
-        // Fetch the room and user information from the TikTok URL
-        const [user, roomId] = await tiktokLive.getRoomAndUserFromUrl();
-        // Fetch the live stream URL
-        const liveUrl = await tiktokLive.getLiveUrl();
-
-        return liveUrl;
-    } catch (error) {
-        console.error("Error playing video: ", error);
-    }
-}
-
-function validateTiktokLiveURL(url: string) {
-    const tiktokLiveUrlRegex = /https:\/\/(www\.)?tiktok\.com\/@([^/]+)\/live/i;
-    return tiktokLiveUrlRegex.test(url);
-}
-
-function validateTiktokVideoURL(url: string) {
-    const tiktokVideoUrlRegex = /https:\/\/(www\.)?tiktok\.com\/@[^/]+\/video\/\d+/i;
-    return tiktokVideoUrlRegex.test(url);
 }
 
 let ffmpegRunning: { [key: string]: boolean } = {};

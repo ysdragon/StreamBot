@@ -1,12 +1,12 @@
 # StreamBot
 
-This is a Discord selfbot that allows streaming videos, and streams from YouTube/Tiktok and direct links to a Discord voice channel.
+This is a Discord selfbot that allows streaming videos, and streams from YouTube and direct links to a Discord voice channel.
 
 ## 🧐Features
 
 - Stream videos from a local folder.
 - Stream and search for YouTube videos using titles.
-- Stream (YouTube videos/live streams, Tiktok videos/live streams) by link.
+- Stream YouTube videos/live streams by link.
 - Stream arbitrary links (video files, live streams, etc.).
 - Playback commands: play, playlink, ytplay, pause, resume, stop.
 - List available videos.
@@ -48,7 +48,7 @@ bun run start
 
 ```
 play <video name> - Play a video from the local folder.
-playlink <url> - Play a (YouTube video/live stream, TikTok video/live stream, direct link).
+playlink <url> - Play a (YouTube video/live stream, direct link).
 ytplay <query> - Play a YouTube video from a title query.
 ytsearch <query> - Search for a YouTube video using a title query.
 stop - Stop the current playback.
