@@ -398,7 +398,7 @@ streamer.client.on('messageCreate', async (message) => {
                         message.reply('Failed to generate preview thumbnails.');
                     }
                 } catch (error) {
-                    console.error('Error generating preview preview thumbnails:', error);
+                    console.error('Error generating preview thumbnails:', error);
                 }
                 break;
             case 'help':
