@@ -44,6 +44,21 @@ Start the built artifacts:
 bun run start
 ```
 
+## Start with Docker Compose
+
+If you want to use Docker Compose, follow these steps:
+
+1. Create a new folder.
+2. Run the following command to download the `docker-compose.yml` file:
+   ```bash
+   wget https://raw.githubusercontent.com/ysdragon/StreamBot/main/docker-compose.yml
+   ```
+3. Edit the `docker-compose.yml` file and update the necessary information (e.g., TOKEN, PREFIX, GUILD_ID, etc.).
+4. Run the following command to start the Docker Compose setup:
+   ```bash
+   docker compose up -d
+   ```
+   
 ## 🛠️ Commands
 
 ```
