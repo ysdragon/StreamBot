@@ -1,0 +1,33 @@
+services:
+  streambot:
+    image: quay.io/ydrag0n/streambot:latest
+    container_name: streambot
+    restart: always
+    environment:
+      # Selfbot options
+      TOKEN: "" # Your Discord self-bot token
+      PREFIX: "$" # The prefix used to trigger your self-bot commands
+      GUILD_ID: "" # The ID of the Discord server your self-bot will be running on
+      COMMAND_CHANNEL_ID: "" # The ID of the Discord channel where your self-bot will respond to commands
+      VIDEO_CHANNEL_ID: "" # The ID of the Discord voice/video channel where your self-bot will stream videos
+      VIDEOS_FOLDER: "./videos" # The local path where you store video files
+      PREVIEW_CACHE: "/tmp/preview-cache" # The local path where your self-bot will cache video preview thumbnails
+
+      # Stream options
+      STREAM_WIDTH: "1280" # The width of the video stream in pixels
+      STREAM_HEIGHT: "720" # The height of the video stream in pixels
+      STREAM_FPS: "30" # The frames per second (FPS) of the video stream
+      STREAM_BITRATE_KBPS: "200" # The bitrate of the video stream in kilobits per second (Kbps)
+      STREAM_MAX_BITRATE_KBPS: "200" # The maximum bitrate of the video stream in kilobits per second (Kbps)
+      STREAM_HARDWARE_ACCELERATION: "false" # Whether to use hardware acceleration for video decoding, set to "true" to enable, "false" to disable
+      STREAM_VIDEO_CODEC: "H264" # The video codec to use for the stream, can be "H264" or "H265" or "VP8"
+
+      # Videos server options
+      SERVER_ENABLED: "true" # Whether to enable the built-in video server
+      SERVER_USERNAME: "admin" # The username for the video server's admin interface
+      SERVER_PASSWORD: "admin" # The password for the video server's admin interface
+      SERVER_PORT: "3000" # The port number the video server will listen on
+    volumes:
+      - ./videos:/home/bots/Streambot/videos
+    ports:
+      - 3000:3000
