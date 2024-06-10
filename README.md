@@ -36,7 +36,7 @@ bun install
 bun run build
 ```
 
-4. Rename [config.json.example](https://github.com/ysdragon/StreamBot/blob/main/config.json.example) to config.json
+4. Rename [.env.example](https://github.com/ysdragon/StreamBot/blob/main/.env.example) to .env
 
 ## Usage
 Start the built artifacts:
@@ -63,34 +63,33 @@ help - Show help message.
 
 ## 🛠️ Configuration
 
-Configuration is done via `config.json`:
+Configuration is done via `.env`:
 
-```json
-{
-  "token": "<user bot token>",
-  "prefix": "<here you can set the bot prefix>",
-  "guildId": "<guild id (server id)>",
-  "commandChannel": "<command channel id>",
-  "videoChannel": "<voice channel id>",
-  "adminIds": ["<admin id>"],
-  "videosFolder": "<videos folder path>",
-  "previewCache": "<here you can set the preview thumbnails cache folder>",
-  "streamOpts": {
-    "width": 1920,
-    "height": 1080,
-    "fps": 30,
-    "bitrateKbps": 2500,
-    "maxBitrateKbps": 2500,
-    "hardware_acc": false,
-    "videoCodec": "<Stream/video codec can be set to either (H264), (H265) or (VP8)>"
-  },
-  "server": {
-    "enabled": false,
-    "username": "<here you can set the username>",
-    "password": "<here you can set the password>",
-    "port": 8080
-  }
-}
+```bash
+# Selfbot options
+TOKEN = "" # Your Discord self-bot token
+PREFIX = "$" # The prefix used to trigger your self-bot commands
+GUILD_ID = "" # The ID of the Discord server your self-bot will be running on
+COMMAND_CHANNEL_ID = "" # The ID of the Discord channel where your self-bot will respond to commands
+VIDEO_CHANNEL_ID = "" # The ID of the Discord voice/video channel where your self-bot will stream videos
+ADMIN_IDS = [""] # A list of Discord user IDs that are considered administrators for your self-bot (not implemented yet)
+VIDEOS_FOLDER = "./videos" # The local path where you store video files
+PREVIEW_CACHE = "/tmp/preview-cache" # The local path where your self-bot will cache video preview thumbnails
+
+# Stream options
+STREAM_WIDTH = "1280" # The width of the video stream in pixels
+STREAM_HEIGHT = "720" # The height of the video stream in pixels
+STREAM_FPS = "30" # The frames per second (FPS) of the video stream
+STREAM_BITRATE_KBPS = "1000" # The bitrate of the video stream in kilobits per second (Kbps)
+STREAM_MAX_BITRATE_KBPS = "2500" # The maximum bitrate of the video stream in kilobits per second (Kbps)
+STREAM_HARDWARE_ACCELERATION = "false" # Whether to use hardware acceleration for video decoding, set to "true" to enable, "false" to disable
+STREAM_VIDEO_CODEC = "H264" # The video codec to use for the stream, can be "H264" or "H265" or "VP8"
+
+# Videos server options
+SERVER_ENABLED = "false" # Whether to enable the built-in video server
+SERVER_USERNAME = "admin" # The username for the video server's admin interface
+SERVER_PASSWORD = "admin" # The password for the video server's admin interface
+SERVER_PORT = "8080" # The port number the video server will listen on
 ```
 
 ## Get Token ?

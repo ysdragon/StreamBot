@@ -2,6 +2,6 @@
 LICENSE
 node_modules/
 dist/
-config.json
+.env
 bun.lockb
 videos/

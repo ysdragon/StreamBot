@@ -17,7 +17,7 @@
 
     /* Modules */
     "module": "commonjs",                                /* Specify what module code is generated. */
-    "resolveJsonModule": true,                        /* Enable importing .json files. */
+
     /* Emit */
     "importHelpers": true,                            /* Allow importing helper functions from tslib once per project, instead of including them per-file. */
     "esModuleInterop": true,                             /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */

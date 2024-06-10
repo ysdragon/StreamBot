@@ -1,6 +1,6 @@
 
-// File List and Upload to config.videosFolder
-import config from "../config.json";
+// File List and Upload to videosFolder
+import config from "./config"
 import express from "express";
 import multer from "multer";
 import path from "path";
@@ -11,25 +11,20 @@ import https from "https";
 const app = express();
 const agent = new https.Agent({ rejectUnauthorized: false });
 
-
-const user = config.server.username || 'admin';
-const pass = config.server.password || 'admin';
-const port = config.server.port || '8080';
-
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, config.videosFolder);
-    }, 
-    filename: (req, file, cb) => {
-        cb(null, file.originalname);
-    },
+  destination: (cb) => {
+    cb(null, config.videosFolder);
+  },
+  filename: (file, cb) => {
+    cb(null, file.originalname);
+  },
 });
 
 const upload = multer({ storage: storage });
 
 
 app.use((req, res, next) => {
-  const auth = {name: user, password: pass};
+  const auth = { name: config.server_username, password: config.server_password };
 
   const b64auth = (req.headers.authorization || '').split(' ')[1] || '';
   const [username, password] = Buffer.from(b64auth, 'base64').toString().split(':');
@@ -45,65 +40,65 @@ app.use((req, res, next) => {
 // file upload
 app.post("/api/upload", upload.single("file"), (req, res) => {
 
-    // provide a return button
-    const template = `
+  // provide a return button
+  const template = `
         ${template_style}
         <div class="container">
             <h1>File Uploaded</h1>
             <a href="/" class="btn btn-primary">Return</a>
         </div>
     `;
-    res.send(template);
+  res.send(template);
 })
 
 // remote upload
 app.post("/api/remote_upload", upload.single("link"), async (req, res) => {
-    const link = req.body.link;
-    const filename = link.substring(link.lastIndexOf('/') + 1);
-    const filepath = path.join(config.videosFolder, filename);
-  
-    try {
-      const response = await axios.get(link, { responseType: 'stream', httpsAgent: agent });
-      const writer = fs.createWriteStream(filepath);
-  
-      response.data.pipe(writer);
-  
-      writer.on('finish', () => {
-        const template = `
+  const link = req.body.link;
+  const filename = link.substring(link.lastIndexOf('/') + 1);
+  const filepath = path.join(config.videosFolder, filename);
+
+  try {
+    const response = await axios.get(link, { responseType: 'stream', httpsAgent: agent });
+    const writer = fs.createWriteStream(filepath);
+
+    response.data.pipe(writer);
+
+    writer.on('finish', () => {
+      const template = `
           ${template_style}
           <div class="container">
             <h1>File Uploaded successfully: ${filename}</h1>
             <a href="/" class="btn btn-primary">Return</a>
           </div>
         `;
-        res.send(template);
-      });
-  
-      writer.on('error', (err) => {
-        console.error(err);
-        const template = `
+      res.send(template);
+    });
+
+    writer.on('error', (err) => {
+      console.error(err);
+      const template = `
           ${template_style}
           <div class="container">
             <h1>Error uploading file</h1>
             <a href="/" class="btn btn-primary">Return</a>
           </div>
         `;
-        res.send(template);
-      });
-    } catch (err) {
-      console.error(err);
-      const template = `
+      res.send(template);
+    });
+  } catch (err) {
+    console.error(err);
+    const template = `
         ${template_style}
         <div class="container">
           <h1>Error uploading file</h1>
           <a href="/" class="btn btn-primary">Return</a>
         </div>
       `;
-      res.send(template);
-    }
+    res.send(template);
+  }
 })
 
-// Simple UI to show all files in config.videosFolder
+// Simple UI to show all files in videosFolder
 const template_style = `
     <!-- provide a bootstrap style by using CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.1/css/bootstrap.min.css" integrity="sha512-Z/def5z5u2aR89OuzYcxmDJ0Bnd5V1cKqBEbvLOiUNWdg9PQeXVvXLI90SE4QOHGlfLqUnDNVAYyZi8UwUTmWQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -182,24 +177,24 @@ const template_style = `
     `
 
 const prettySize = (size) => {
-    if (size < 1024) {
-        return `${size} B`;
-    } else if (size < 1024 * 1024) {
-        return `${(size / 1024).toFixed(2)} KB`;
-    } else if (size < 1024 * 1024 * 1024) {
-        return `${(size / 1024 / 1024).toFixed(2)} MB`;
-    } else {
-        return `${(size / 1024 / 1024 / 1024).toFixed(2)} GB`;
-    }
+  if (size < 1024) {
+    return `${size} B`;
+  } else if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(2)} KB`;
+  } else if (size < 1024 * 1024 * 1024) {
+    return `${(size / 1024 / 1024).toFixed(2)} MB`;
+  } else {
+    return `${(size / 1024 / 1024 / 1024).toFixed(2)} GB`;
+  }
 }
 
 app.get("/", (req, res) => {
-    fs.readdir(config.videosFolder, (err, files) => {
-        if (err) {
-            console.log(err);
-        } else {
-            // template to show all files with links and a form to upload a file
-            const template = `
+  fs.readdir(config.videosFolder, (err, files) => {
+    if (err) {
+      console.log(err);
+    } else {
+      // template to show all files with links and a form to upload a file
+      const template = `
             ${template_style}
             <div class="container">
               <h1>Video List</h1>
@@ -216,8 +211,8 @@ app.get("/", (req, res) => {
                   </thead>
                   <tbody>
                     ${files.map(file => {
-                      const stats = fs.statSync(path.join(config.videosFolder, file));
-                      return `
+        const stats = fs.statSync(path.join(config.videosFolder, file));
+        return `
                         <tr>
                           <td>${file}</td>
                           <td>${prettySize(stats.size)}</td>
@@ -230,7 +225,7 @@ app.get("/", (req, res) => {
                           <td><a href="/delete/${file}">Delete</a></td>
                         </tr>
                       `;
-                    }).join("")}
+      }).join("")}
                   </tbody>
                 </table>
               </div>
@@ -275,123 +270,123 @@ app.get("/", (req, res) => {
             });
             </script>            
             `;
-            res.send(template);
-        }
-    })
+      res.send(template);
+    }
+  })
 })
 
 let ffmpegRunning = {};
 
 async function ffmpegScreenshot(video) {
-    return new Promise<void>((resolve, reject) => {
-        if (ffmpegRunning[video]) {
-            // wait for ffmpeg to finish
-            let wait = () => {
-                if (ffmpegRunning[video] == false) {
-                    resolve();
-                }
-                setTimeout(wait, 100);
-            }
-            wait();
-            return;
+  return new Promise<void>((resolve, reject) => {
+    if (ffmpegRunning[video]) {
+      // wait for ffmpeg to finish
+      let wait = () => {
+        if (ffmpegRunning[video] == false) {
+          resolve();
         }
-        ffmpegRunning[video] =  true
-        const ffmpeg = require("fluent-ffmpeg");
-        const ts = ['10%', '30%', '50%', '70%', '90%'];
-        const takeOne = (i) => {
-            if (i >= ts.length) {
-                ffmpegRunning[video] = false;
-                resolve();
-                return;
-            }
-            console.log(`Taking screenshot ${i+1} of ${video} at ${ts[i]}`)
-            ffmpeg(`${config.videosFolder}/${video}`).on("end", () => {
-                takeOne(i + 1);
-            }).on("error", (err) => {
-                ffmpegRunning[video] = false;
-                reject(err);
-            })
-            .screenshots({
-                count: 1,
-                filename: `${video}-${i+1}.jpg`,
-                timestamps: [ts[i]],
-                folder: config.previewCache,
-                // take screenshot at 640x480
-                size: "640x480"
-            });
-        }
-        takeOne(0);
-    });
+        setTimeout(wait, 100);
+      }
+      wait();
+      return;
+    }
+    ffmpegRunning[video] = true
+    const ffmpeg = require("fluent-ffmpeg");
+    const ts = ['10%', '30%', '50%', '70%', '90%'];
+    const takeOne = (i) => {
+      if (i >= ts.length) {
+        ffmpegRunning[video] = false;
+        resolve();
+        return;
+      }
+      console.log(`Taking screenshot ${i + 1} of ${video} at ${ts[i]}`)
+      ffmpeg(`${config.videosFolder}/${video}`).on("end", () => {
+        takeOne(i + 1);
+      }).on("error", (err) => {
+        ffmpegRunning[video] = false;
+        reject(err);
+      })
+        .screenshots({
+          count: 1,
+          filename: `${video}-${i + 1}.jpg`,
+          timestamps: [ts[i]],
+          folder: config.previewCache,
+          // take screenshot at 640x480
+          size: "640x480"
+        });
+    }
+    takeOne(0);
+  });
 }
 
 // generate preview of video file using ffmpeg, cache it to previewCache and serve it
 app.get("/api/preview/:file/:id", async (req, res) => {
-    const file = req.params.file;
-    const id = req.params.id;
-    // id should be 1, 2, 3, 4 or 5
-    if (id < 1 || id > 5) {
-        res.status(404).send("Not Found");
-        return;
+  const file = req.params.file;
+  const id = req.params.id;
+  // id should be 1, 2, 3, 4 or 5
+  if (id < 1 || id > 5) {
+    res.status(404).send("Not Found");
+    return;
+  }
+  // check if preview exists `${file}-%i.jpg`
+  const previewFile = path.join(config.previewCache, `${file}-${id}.jpg`);
+  if (fs.existsSync(previewFile)) {
+    res.sendFile(previewFile);
+  } else {
+    try {
+      await ffmpegScreenshot(file);
+    } catch (err) {
+      console.log(err);
+      res.status(500).send("Internal Server Error");
+      return;
     }
-    // check if preview exists `${file}-%i.jpg`
-    const previewFile = path.join(config.previewCache, `${file}-${id}.jpg`);
-    if (fs.existsSync(previewFile)) {
-        res.sendFile(previewFile);
-    } else {
-        try {
-            await ffmpegScreenshot(file);
-        } catch (err) {
-            console.log(err);
-            res.status(500).send("Internal Server Error");
-            return;
-        }
-        res.sendFile(previewFile);
-    }
+    res.sendFile(previewFile);
+  }
 })
 
 // stringify object to <ul><li>...</li></ul>
 const stringify = (obj) => {
-    // if string, return it
-    if (typeof obj == "string") {
-        return obj;
-    }
+  // if string, return it
+  if (typeof obj == "string") {
+    return obj;
+  }
 
-    if (Array.isArray(obj)) {
-        return `<ul>${obj.map(item => {
-            return `<li>${stringify(item)}</li>`;
-        }).join("")}</ul>`;
+  if (Array.isArray(obj)) {
+    return `<ul>${obj.map(item => {
+      return `<li>${stringify(item)}</li>`;
+    }).join("")}</ul>`;
+  } else {
+    if (typeof obj == "object") {
+      return `<ul>${Object.keys(obj).map(key => {
+        return `<li>${key}: ${stringify(obj[key])}</li>`;
+      }).join("")}</ul>`;
     } else {
-        if (typeof obj == "object") {
-            return `<ul>${Object.keys(obj).map(key => {
-                return `<li>${key}: ${stringify(obj[key])}</li>`;
-            }).join("")}</ul>`;
-        } else {
-            return obj;
-        }
-
+      return obj;
     }
+
+  }
 }
 
 
 // page to show preview
 app.get("/preview/:file", (req, res) => {
-    const file = req.params.file;
-    // check if file exists
-    if (!fs.existsSync(path.join(config.videosFolder, file))) {
-        res.status(404).send("Not Found");
-        return;
-    }
+  const file = req.params.file;
+  // check if file exists
+  if (!fs.existsSync(path.join(config.videosFolder, file))) {
+    res.status(404).send("Not Found");
+    return;
+  }
 
-    // get metadata of the file and format it to a table with bootstrap using node-fluent-ffmpeg
-    const ffmpeg = require("fluent-ffmpeg");
-    ffmpeg.ffprobe(`${config.videosFolder}/${file}`, (err, metadata) => {
-        if (err) {
-            console.log(err);
-            res.status(500).send("Internal Server Error");
-            return;
-        }
-        // template to show metadata using bootstrap
-        const template = `
+  // get metadata of the file and format it to a table with bootstrap using node-fluent-ffmpeg
+  const ffmpeg = require("fluent-ffmpeg");
+  ffmpeg.ffprobe(`${config.videosFolder}/${file}`, (err, metadata) => {
+    if (err) {
+      console.log(err);
+      res.status(500).send("Internal Server Error");
+      return;
+    }
+    // template to show metadata using bootstrap
+    const template = `
             ${template_style}
             <div class="container">
                 <h1>Metadata</h1>
@@ -405,13 +400,13 @@ app.get("/preview/:file", (req, res) => {
                         </thead>
                         <tbody>
                             ${Object.keys(metadata.format).map(key => {
-                                return `
+      return `
                                     <tr>
                                         <td>${key}</td>
                                         <td>${stringify(metadata.format[key])}</td>
                                     </tr>
                                 `;
-                            }).join("")}
+    }).join("")}
                         </tbody>
                     </table>
                 </div>
@@ -431,41 +426,41 @@ app.get("/preview/:file", (req, res) => {
                 <a href="/" class="btn btn-primary">Return</a>
             </div>
         `;
-        res.send(template);
-    });
+    res.send(template);
+  });
 })
 
 // page to delete file
 app.get("/delete/:file", (req, res) => {
-    const file = req.params.file;
-    // check if file exists
-    if (!fs.existsSync(path.join(config.videosFolder, file))) {
-        res.status(404).send("Not Found");
-        return;
-    }
+  const file = req.params.file;
+  // check if file exists
+  if (!fs.existsSync(path.join(config.videosFolder, file))) {
+    res.status(404).send("Not Found");
+    return;
+  }
 
-    fs.unlink(path.join(config.videosFolder, file) ,function(err){
-        if(err) return console.log(err);
-        console.log('file ( ' + file + ' ) deleted successfully');
-        const template = `
+  fs.unlink(path.join(config.videosFolder, file), function (err) {
+    if (err) return console.log(err);
+    console.log('file ( ' + file + ' ) deleted successfully');
+    const template = `
             ${template_style}
             <div class="container">
                 <h1>file deleted successfully</h1>
                 <a href="/" class="btn btn-primary">Return</a>
             </div>
         `;
-        res.send(template);
+    res.send(template);
 
-    });  
+  });
 
 
 })
 
 // create cache folder if not exists
 if (!fs.existsSync(config.previewCache)) {
-    fs.mkdirSync(config.previewCache);
+  fs.mkdirSync(config.previewCache);
 }
 
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+app.listen(config.server_port, () => {
+  console.log(`Server is running on port ${config.server_port}`);
 })

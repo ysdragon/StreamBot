@@ -19,9 +19,6 @@ RUN pnpm install
 # Copy the rest of the application code
 COPY . .
 
-# Rename config.json.example to config.json
-RUN mv config.json.example config.json
-
 # Build the application
 RUN pnpm run build
 

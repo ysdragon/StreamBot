@@ -1,6 +1,6 @@
 import { Client, TextChannel, CustomStatus, ActivityOptions, MessageAttachment } from "discord.js-selfbot-v13";
 import { command, streamLivestreamVideo, MediaUdp, StreamOptions, Streamer } from "@dank074/discord-video-stream";
-import config from "../config.json";
+import config from "./config"
 import fs from 'fs';
 import path from 'path';
 import ytdl from '@distube/ytdl-core';
@@ -9,28 +9,25 @@ import yts from 'play-dl';
 const streamer = new Streamer(new Client());
 
 const streamOpts: StreamOptions = {
-    height: config.streamOpts.height,
-    fps: config.streamOpts.fps,
-    bitrateKbps: config.streamOpts.bitrateKbps,
-    maxBitrateKbps: config.streamOpts.maxBitrateKbps,
-    hardwareAcceleratedDecoding: config.streamOpts.hardware_acceleration,
-    videoCodec: config.streamOpts.videoCodec === 'H264' ? 'H264' : 'VP8'
-}
-
-const prefix = config.prefix;
-
-const videosFolder = config.videosFolder || './videos';
+    width: config.width,
+    height: config.height,
+    fps: config.fps,
+    bitrateKbps: config.bitrateKbps,
+    maxBitrateKbps: config.maxBitrateKbps,
+    hardwareAcceleratedDecoding: config.hardwareAcceleratedDecoding,
+    videoCodec: config.videoCodec === 'VP8' ? 'VP8' : 'H264'
+};
 
 // create videos folder if not exists
-if (!fs.existsSync(videosFolder)) {
-    fs.mkdirSync(videosFolder);
+if (!fs.existsSync(config.videosFolder)) {
+    fs.mkdirSync(config.videosFolder);
 }
 
-const videoFiles = fs.readdirSync(videosFolder);
+const videoFiles = fs.readdirSync(config.videosFolder);
 let videos = videoFiles.map(file => {
     const fileName = path.parse(file).name;
     // replace space with _
-    return { name: fileName.replace(/ /g, ''), path: path.join(videosFolder, file) };
+    return { name: fileName.replace(/ /g, ''), path: path.join(config.videosFolder, file) };
 });
 
 // print out all videos
@@ -61,9 +58,9 @@ let streamStatus = {
     joinsucc: false,
     playing: false,
     channelInfo: {
-        guildId: '',
-        channelId: '',
-        cmdChannelId: ''
+        guildId: config.guildId,
+        channelId: config.videoChannelId,
+        cmdChannelId: config.cmdChannelId
     }
 }
 
@@ -75,9 +72,9 @@ streamer.client.on('voiceStateUpdate', (oldState, newState) => {
             streamStatus.joinsucc = false;
             streamStatus.playing = false;
             streamStatus.channelInfo = {
-                guildId: '',
-                channelId: '',
-                cmdChannelId: streamStatus.channelInfo.cmdChannelId
+                guildId: config.guildId,
+                channelId: config.videoChannelId,
+                cmdChannelId: config.cmdChannelId
             }
             streamer.client.user?.setActivity(status_idle() as unknown as ActivityOptions)
         }
@@ -95,18 +92,16 @@ streamer.client.on('voiceStateUpdate', (oldState, newState) => {
 
 streamer.client.on('messageCreate', async (message) => {
     if (message.author.bot) return; // ignore bots
-    if (message.author.id == streamer.client.user?.id) return; // ignore self
-    if (!config.commandChannel.includes(message.channel.id)) return; // ignore non-command channels
-    if (!message.content.startsWith(prefix)) return; // ignore non-commands
+    if (message.author.id === streamer.client.user?.id) return; // ignore self
+    if (!config.cmdChannelId.includes(message.channel.id.toString())) return; // ignore non-command channels
+    if (!message.content.startsWith(config.prefix!)) return; // ignore non-commands
+    const args = message.content.slice(config.prefix!.length).trim().split(/ +/); // split command and arguments
 
-    const args = message.content.slice(prefix.length).trim().split(/ +/); // split command and arguments
-    if (args.length == 0) return;
-
+    if (args.length === 0) return;
     const user_cmd = args.shift()!.toLowerCase();
-    const [guildId, channelId] = [config.guildId, config.videoChannel];
+    const [guildId, channelId] = [config.guildId, config.videoChannelId!];
 
-
-    if (config.commandChannel.includes(message.channel.id)) {
+    if (config.cmdChannelId.includes(message.channel.id)) {
         switch (user_cmd) {
             case 'play':
                 if (streamStatus.joined) {
@@ -275,11 +270,11 @@ streamer.client.on('messageCreate', async (message) => {
                 break;
             case 'refresh':
                 // refresh video list
-                const videoFiles = fs.readdirSync(videosFolder);
+                const videoFiles = fs.readdirSync(config.videosFolder);
                 videos = videoFiles.map(file => {
                     const fileName = path.parse(file).name;
                     // replace space with _
-                    return { name: fileName.replace(/ /g, ''), path: path.join(videosFolder, file) };
+                    return { name: fileName.replace(/ /g, ''), path: path.join(config.videosFolder, file) };
                 });
                 message.reply('video list refreshed ' + videos.length + ' videos found.\n' + videos.map(m => m.name).join('\n'));
                 break;
@@ -375,7 +370,7 @@ streamer.client.on('messageCreate', async (message) => {
 
                 for (const [name, cmd] of Object.entries(commands)) {
                     help += `**${name}: ${cmd.description}**\n`;
-                    help += `Usage: \`${prefix}${cmd.usage}\`\n`;
+                    help += `Usage: \`${config.prefix}${cmd.usage}\`\n`;
 
                 }
 
@@ -389,6 +384,18 @@ streamer.client.on('messageCreate', async (message) => {
 });
 
 streamer.client.login(config.token);
+
+function parseBoolean(value: string | undefined): boolean {
+    if (typeof value === "string") {
+        value = value.trim().toLowerCase();
+    }
+    switch (value) {
+        case "true":
+            return true;
+        default:
+            return false;
+    }
+}
 
 async function playVideo(video: string, udpConn: MediaUdp) {
     console.log("Started playing video");
@@ -411,7 +418,7 @@ async function playVideo(video: string, udpConn: MediaUdp) {
 }
 
 async function sendFinishMessage() {
-    const channel = streamer.client.channels.cache.get(streamStatus.channelInfo.cmdChannelId) as TextChannel;
+    const channel = streamer.client.channels.cache.get(config.cmdChannelId.toString()) as TextChannel;
     await channel?.send("**Finished playing video.**");
 }
 
@@ -547,7 +554,7 @@ async function ffmpegScreenshot(video: string): Promise<string[]> {
 }
 
 // run server if enabled in config
-if (config.server.enabled) {
+if (config.server_enabled) {
     // run server.js
     require('./server');
 }
