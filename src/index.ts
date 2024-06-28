@@ -385,18 +385,6 @@ streamer.client.on('messageCreate', async (message) => {
 
 streamer.client.login(config.token);
 
-function parseBoolean(value: string | undefined): boolean {
-    if (typeof value === "string") {
-        value = value.trim().toLowerCase();
-    }
-    switch (value) {
-        case "true":
-            return true;
-        default:
-            return false;
-    }
-}
-
 async function playVideo(video: string, udpConn: MediaUdp) {
     console.log("Started playing video");
     udpConn.mediaConnection.setSpeaking(true);
