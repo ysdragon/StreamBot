@@ -34,15 +34,15 @@ let videos = videoFiles.map(file => {
 console.log(`Available videos:\n${videos.map(m => m.name).join('\n')}`);
 
 const status_idle = () => {
-    return new CustomStatus()
-        .setState('Watching Something!')
+    return new CustomStatus(new Client())
         .setEmoji('📽')
+        .setState('Watching Something!')     
 }
 
 const status_watch = (name) => {
-    return new CustomStatus()
-        .setState(`Playing ${name}...`)
+    return new CustomStatus(new Client())
         .setEmoji('📽')
+        .setState(`Playing ${name}...`)
 }
 
 // ready event
