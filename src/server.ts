@@ -12,10 +12,10 @@ const app = express();
 const agent = new https.Agent({ rejectUnauthorized: false });
 
 const storage = multer.diskStorage({
-  destination: (cb) => {
+  destination: (req: any, file: any, cb: (arg0: null, arg1: string) => void) => {
     cb(null, config.videosFolder);
   },
-  filename: (file, cb) => {
+  filename: (req: any, file: { originalname: any; }, cb: (arg0: null, arg1: any) => void) => {
     cb(null, file.originalname);
   },
 });
