@@ -7,9 +7,6 @@ WORKDIR /home/bots/StreamBot
 # Install important deps
 RUN apk --no-cache add --virtual .builds-deps build-base python3 ffmpeg
 
-# Install node dev types
-RUN pnpm install --save-dev @types/node
-
 # Install pnpm
 RUN npm install pnpm -g
 
@@ -18,6 +15,9 @@ COPY package.json ./
 
 # Install dependencies
 RUN pnpm install
+
+# Install node dev types
+RUN pnpm install --save-dev @types/node
 
 # Copy the rest of the application code
 COPY . .
