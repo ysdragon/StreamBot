@@ -27,7 +27,7 @@ const videoFiles = fs.readdirSync(config.videosFolder);
 let videos = videoFiles.map(file => {
     const fileName = path.parse(file).name;
     // replace space with _
-    return { name: fileName.replace(/ /g, ''), path: path.join(config.videosFolder, file) };
+    return { name: fileName.replace(/ /g, '_'), path: path.join(config.videosFolder, file) };
 });
 
 // print out all videos
@@ -274,7 +274,7 @@ streamer.client.on('messageCreate', async (message) => {
                 videos = videoFiles.map(file => {
                     const fileName = path.parse(file).name;
                     // replace space with _
-                    return { name: fileName.replace(/ /g, ''), path: path.join(config.videosFolder, file) };
+                    return { name: fileName.replace(/ /g, '_'), path: path.join(config.videosFolder, file) };
                 });
                 message.reply('video list refreshed ' + videos.length + ' videos found.\n' + videos.map(m => m.name).join('\n'));
                 break;
@@ -282,13 +282,15 @@ streamer.client.on('messageCreate', async (message) => {
                 let vid = args.shift();
                 let vid_name = videos.find(m => m.name === vid);
 
+
                 if (!vid_name) {
                     message.reply('** Video not found **');
                     return;
                 }
 
                 try {
-                    const thumbnails = await ffmpegScreenshot(`${vid_name.name}${path.extname(vid_name.path)}`);
+                    //                                                replace _ with space
+                    const thumbnails = await ffmpegScreenshot(`${vid_name.name.replace(/_/g, ' ')}${path.extname(vid_name.path)}`);
                     if (thumbnails.length > 0) {
                         const attachments: MessageAttachment[] = [];
                         for (const screenshotPath of thumbnails) {
