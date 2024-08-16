@@ -2,8 +2,6 @@
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
 
-    "types": ["node"],
-
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "sourceMap": true,
