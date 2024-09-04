@@ -14,6 +14,7 @@
   "dependencies": {
     "@dank074/discord-video-stream": "3.2.0",
     "@distube/ytdl-core": "^4.14.4",
+    "@types/fluent-ffmpeg": "^2.1.26",
     "axios": "^1.7.7",
     "discord.js-selfbot-v13": "^3.3.0",
     "dotenv": "^16.4.5",

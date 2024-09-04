@@ -12,6 +12,7 @@ services:
       VIDEO_CHANNEL_ID: "" # The ID of the Discord voice/video channel where your self-bot will stream videos
       VIDEOS_FOLDER: "./videos" # The local path where you store video files
       PREVIEW_CACHE: "/tmp/preview-cache" # The local path where your self-bot will cache video preview thumbnails
+      VIDEO_CACHE: "./tmp/video-cache" # The local path where your self-bot will cache youtube videos
 
       # Stream options
       STREAM_WIDTH: "1280" # The width of the video stream in pixels
@@ -28,6 +29,6 @@ services:
       SERVER_PASSWORD: "admin" # The password for the video server's admin interface
       SERVER_PORT: "3000" # The port number the video server will listen on
     volumes:
-      - ./videos:/home/bots/Streambot/videos
+      - ./videos:/home/bots/StreamBot/videos
     ports:
       - 3000:3000

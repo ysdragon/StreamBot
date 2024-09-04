@@ -9,7 +9,8 @@ export default {
     guildId: process.env.GUILD_ID ? process.env.GUILD_ID : '',
     cmdChannelId: process.env.COMMAND_CHANNEL_ID ? process.env.COMMAND_CHANNEL_ID : '',
     videoChannelId: process.env.VIDEO_CHANNEL_ID ? process.env.VIDEO_CHANNEL_ID : '',
-    previewCache: process.env.PREVIEW_CACHE ? process.env.PREVIEW_CACHE : '/tmp/preview-cache',
+    previewCache: process.env.PREVIEW_CACHE ? process.env.PREVIEW_CACHE : './tmp/preview-cache',
+    videoCache: process.env.VIDEO_CACHE ? process.env.VIDEO_CACHE : './tmp/video-cache',
 
     // Stream options
     width: process.env.STREAM_WIDTH ? parseInt(process.env.STREAM_WIDTH) : 1280,

@@ -87,9 +87,9 @@ PREFIX = "$" # The prefix used to trigger your self-bot commands
 GUILD_ID = "" # The ID of the Discord server your self-bot will be running on
 COMMAND_CHANNEL_ID = "" # The ID of the Discord channel where your self-bot will respond to commands
 VIDEO_CHANNEL_ID = "" # The ID of the Discord voice/video channel where your self-bot will stream videos
-ADMIN_IDS = [""] # A list of Discord user IDs that are considered administrators for your self-bot (not implemented yet)
 VIDEOS_FOLDER = "./videos" # The local path where you store video files
-PREVIEW_CACHE = "/tmp/preview-cache" # The local path where your self-bot will cache video preview thumbnails
+PREVIEW_CACHE = "./tmp/preview-cache" # The local path where your self-bot will cache video preview thumbnails
+VIDEO_CACHE = "./tmp/video-cache" # The local path where your self-bot will cache youtube videos
 
 # Stream options
 STREAM_WIDTH = "1280" # The width of the video stream in pixels

@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import ytdl from '@distube/ytdl-core';
 import yts from 'play-dl';
+import ffmpeg from 'fluent-ffmpeg';
 
 const streamer = new Streamer(new Client());
 
@@ -18,10 +19,27 @@ const streamOpts: StreamOptions = {
     videoCodec: config.videoCodec === 'VP8' ? 'VP8' : 'H264'
 };
 
-// create videos folder if not exists
+// Create the videosFolder dir if it doesn't exist
 if (!fs.existsSync(config.videosFolder)) {
     fs.mkdirSync(config.videosFolder);
 }
+
+// Create previewCache/videoCache parent dir if it doesn't exist
+if (!fs.existsSync(path.dirname(config.videoCache))) {
+    fs.mkdirSync(path.dirname(config.videoCache), { recursive: true });
+}
+
+// Create the previewCache dir if it doesn't exist
+if (!fs.existsSync(config.previewCache)) {
+    fs.mkdirSync(config.previewCache); 
+}
+
+// Create the videoCache dir if it doesn't exist
+if (!fs.existsSync(config.videoCache)) {
+    fs.mkdirSync(config.videoCache); 
+}
+
+const tmpVideo = `${config.videoCache}/temp_vid.mp4`;
 
 const videoFiles = fs.readdirSync(config.videosFolder);
 let videos = videoFiles.map(file => {
@@ -65,7 +83,7 @@ let streamStatus = {
 }
 
 streamer.client.on('voiceStateUpdate', (oldState, newState) => {
-    // when exit channel
+    // When exit channel
     if (oldState.member?.user.id == streamer.client.user?.id) {
         if (oldState.channelId && !newState.channelId) {
             streamStatus.joined = false;
@@ -79,7 +97,7 @@ streamer.client.on('voiceStateUpdate', (oldState, newState) => {
             streamer.client.user?.setActivity(status_idle() as unknown as ActivityOptions)
         }
     }
-    // when join channel success
+    // When join channel success
     if (newState.member?.user.id == streamer.client.user?.id) {
         if (newState.channelId && !oldState.channelId) {
             streamStatus.joined = true;
@@ -108,7 +126,7 @@ streamer.client.on('messageCreate', async (message) => {
                     message.reply('** Already joined **');
                     return;
                 }
-                // get video name and find video file
+                // Get video name and find video file
                 let videoname = args.shift()
                 let video = videos.find(m => m.name == videoname);
 
@@ -289,7 +307,7 @@ streamer.client.on('messageCreate', async (message) => {
                 }
 
                 try {
-                    //                                                replace _ with space
+                    //                                                Replace _ with space
                     const thumbnails = await ffmpegScreenshot(`${vid_name.name.replace(/_/g, ' ')}${path.extname(vid_name.path)}`);
                     if (thumbnails.length > 0) {
                         const attachments: MessageAttachment[] = [];
@@ -376,7 +394,7 @@ streamer.client.on('messageCreate', async (message) => {
 
                 }
 
-                // reply all commands here
+                // Reply with all commands
                 message.reply(help);
                 break;
             default:
@@ -396,6 +414,16 @@ async function playVideo(video: string, udpConn: MediaUdp) {
         const videoStream = await streamLivestreamVideo(video, udpConn);
         videoStream;
         console.log("Finished playing video");
+        // Check: if tmpVideo exists, delete it
+        if (fs.existsSync(tmpVideo)) {
+            fs.unlink(tmpVideo, (err) => {
+                if (err) {
+                    console.error(`Error deleting video: ${err}`);
+                } else {
+                    console.log(`Temp Video deleted: ${tmpVideo}`);
+                }
+            });
+        }
     } catch (error) {
         console.log("Error playing video: ", error);
     } finally {
@@ -426,53 +454,106 @@ async function cleanupStreamStatus() {
     };
 }
 
-async function getVideoUrl(videoUrl: string) {
+async function ytPlay(ytVideo: any): Promise<string | null> {
+    // Filter formats to get the best video format without audio
+    const videoFormats = ytVideo.formats.filter(
+        (format: { hasVideo: boolean; hasAudio: boolean }) =>
+            format.hasVideo && !format.hasAudio
+    );
 
-    const video = await ytdl.getInfo(videoUrl);
-    const videoDetails = video.videoDetails;
-    if (videoDetails.isLiveContent) {
-        // check if the video url is livestream
-        const tsFormats = video.formats.filter(format => format.container === 'ts');
-        const highestTsFormat = tsFormats.reduce((prev: any, current: any) => {
-            if (!prev || current.bitrate > prev.bitrate) {
-                return current;
-            }
-            return prev;
+    // Filter formats to get the best audio format
+    const audioFormats = ytVideo.formats.filter(
+        (format: { hasVideo: boolean; hasAudio: boolean }) =>
+            !format.hasVideo && format.hasAudio
+    );
+
+    // Find the best video format
+    const bestVideoFormat = videoFormats.reduce((best: any, current: any) => {
+        return !best || parseInt(current.qualityLabel) > parseInt(best.qualityLabel)
+            ? current
+            : best;
+    }, null);
+
+    // Find the best audio format
+    const bestAudioFormat = audioFormats.reduce((best: any, current: any) => {
+        return !best || current.bitrate > best.bitrate ? current : best;
+    }, null);
+
+    // Check if we have both formats
+    if (bestVideoFormat && bestAudioFormat) {
+        const videoUrl = bestVideoFormat.url;
+        const audioUrl = bestAudioFormat.url;
+
+        console.log("Downloading/Merging ...");
+        
+        return new Promise((resolve, reject) => {
+            // Use ffmpeg to merge video and audio
+            ffmpeg()
+                .input(videoUrl)
+                .input(audioUrl)
+                .outputOptions("-c:v copy")
+                .outputOptions("-c:a aac")
+                .on("end", () => {
+                    console.log("Downloading/Merging finished!");
+                    resolve(tmpVideo);
+                })
+                .on("error", (err) => {
+                    console.error("Error merging streams:", err);
+                    reject(err);
+                })
+                .save(tmpVideo);
         });
+    }
 
-        if (highestTsFormat) {
-            return highestTsFormat.url;
+    return null;
+}
+
+async function getVideoUrl(videoUrl: string): Promise<string | null> {
+    try {
+        const video = await ytdl.getInfo(videoUrl);
+        const videoDetails = video.videoDetails;
+
+        if (videoDetails.isLiveContent) {
+            // Check if the video URL is a livestream
+            const tsFormats = video.formats.filter(
+                (format) => format.container === "ts"
+            );
+            const highestTsFormat = tsFormats.reduce((prev: any, current: any) => {
+                return !prev || current.bitrate > prev.bitrate ? current : prev;
+            }, null);
+
+            return highestTsFormat ? highestTsFormat.url : null;
+        } else {
+            // If it's not a livestream, play the video
+            return await ytPlay(video);
         }
-    } else {
-        const videoFormats = video.formats
-            .filter((format: {
-                hasVideo: any; hasAudio: any;
-            }) => format.hasVideo && format.hasAudio)
-            .filter(format => format.container === 'mp4');
-
-        return videoFormats[0].url;
+    } catch (error) {
+        console.error("Error occurred while getting video URL:", error);
+        return null;
     }
 }
 
-async function ytPlayTitle(title: string) {
+async function ytPlayTitle(title: string): Promise<string | null> {
     try {
-        const r = await yts.search(title, { limit: 1 });
+        // Search for videos using the provided title
+        const results = await yts.search(title, { limit: 1 });
 
-        if (r.length > 0) {
-            const video = r[0];
+        // Check if any results were found
+        if (results.length > 0) {
+            const video = results[0];
             const videoId = video.id;
+
+            // Ensure videoId is valid before proceeding
             if (videoId) {
-                const ytvideo = await ytdl.getInfo(videoId);
-                const videoFormats = ytvideo.formats
-                    .filter((format: {
-                        hasVideo: any; hasAudio: any;
-                    }) => format.hasVideo && format.hasAudio)
-                    .filter(format => format.container === 'mp4');
-                return videoFormats[0].url;
+                const ytVideoInfo = await ytdl.getInfo(videoId);
+                return await ytPlay(ytVideoInfo);
             }
         }
+
+        return null;
     } catch (error) {
-        console.log('No videos found with the given title.');
+        console.error("Error occurred while searching for videos:", error);
+        return null;
     }
 }
 
@@ -481,14 +562,14 @@ async function ytSearch(title: string): Promise<string[]> {
         const r = await yts.search(title, { limit: 5 });
         const searchResults: string[] = [];
         if (r.length > 0) {
-            r.forEach(function (video: any, index: number) { // Corrected forEach loop
+            r.forEach(function (video: any, index: number) {
                 const result = `${index + 1}. \`${video.title}\``;
                 searchResults.push(result);
             });
         }
         return searchResults;
     } catch (error) {
-        console.log('No videos found with the given title.');
+        console.log("No videos found with the given title.");
         return [];
     }
 }
@@ -498,7 +579,7 @@ let ffmpegRunning: { [key: string]: boolean } = {};
 async function ffmpegScreenshot(video: string): Promise<string[]> {
     return new Promise<string[]>((resolve, reject) => {
         if (ffmpegRunning[video]) {
-            // wait for ffmpeg to finish
+            // Wait for ffmpeg to finish
             let wait = () => {
                 if (ffmpegRunning[video] == false) {
                     resolve(images);
@@ -543,8 +624,8 @@ async function ffmpegScreenshot(video: string): Promise<string[]> {
     });
 }
 
-// run server if enabled in config
+// Run server if enabled in config
 if (config.server_enabled) {
-    // run server.js
+    // Run server.js
     require('./server');
 }
