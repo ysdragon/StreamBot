@@ -36,7 +36,7 @@ console.log(`Available videos:\n${videos.map(m => m.name).join('\n')}`);
 const status_idle = () => {
     return new CustomStatus(new Client())
         .setEmoji('📽')
-        .setState('Watching Something!')     
+        .setState('Watching Something!')
 }
 
 const status_watch = (name) => {
