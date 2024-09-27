@@ -321,14 +321,16 @@ async function ffmpegScreenshot(video) {
 // generate preview of video file using ffmpeg, cache it to previewCache and serve it
 app.get("/api/preview/:file/:id", async (req, res) => {
   const file = req.params.file;
-  const id = req.params.id;
+  const id = parseInt(req.params.id, 10);
+
   // id should be 1, 2, 3, 4 or 5
   if (id < 1 || id > 5) {
     res.status(404).send("Not Found");
     return;
   }
-  // check if preview exists `${file}-%i.jpg`
-  const previewFile = path.join(config.previewCache, `${file}-${id}.jpg`);
+
+  // check if preview exists
+  const previewFile = path.resolve(config.previewCache, `${file}-${id}.jpg`);
   if (fs.existsSync(previewFile)) {
     res.sendFile(previewFile);
   } else {
