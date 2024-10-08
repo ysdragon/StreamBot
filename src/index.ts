@@ -32,12 +32,12 @@ if (!fs.existsSync(path.dirname(config.videoCache))) {
 
 // Create the previewCache dir if it doesn't exist
 if (!fs.existsSync(config.previewCache)) {
-    fs.mkdirSync(config.previewCache); 
+    fs.mkdirSync(config.previewCache);
 }
 
 // Create the videoCache dir if it doesn't exist
 if (!fs.existsSync(config.videoCache)) {
-    fs.mkdirSync(config.videoCache); 
+    fs.mkdirSync(config.videoCache);
 }
 
 const tmpVideo = `${config.videoCache}/temp_vid.mp4`;
@@ -301,15 +301,15 @@ streamer.client.on('messageCreate', async (message) => {
                 let vid = args.shift();
                 let vid_name = videos.find(m => m.name === vid);
 
-
                 if (!vid_name) {
                     message.reply('** Video not found **');
                     return;
                 }
 
                 try {
-                    //                                                Replace _ with space
-                    const thumbnails = await ffmpegScreenshot(`${vid_name.name.replace(/_/g, ' ')}${path.extname(vid_name.path)}`);
+                    const hasUnderscore = vid_name.name.includes('_');
+                                                        //                                                Replace _ with space
+                    const thumbnails = await ffmpegScreenshot(`${hasUnderscore ? vid_name.name : vid_name.name.replace(/_/g, ' ')}${path.extname(vid_name.path)}`);
                     if (thumbnails.length > 0) {
                         const attachments: MessageAttachment[] = [];
                         for (const screenshotPath of thumbnails) {
@@ -486,7 +486,7 @@ async function ytPlay(ytVideo: any): Promise<string | null> {
         const audioUrl = bestAudioFormat.url;
 
         console.log("Downloading/Merging ...");
-        
+
         return new Promise((resolve, reject) => {
             // Use ffmpeg to merge video and audio
             ffmpeg()
