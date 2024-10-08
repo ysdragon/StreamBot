@@ -14,18 +14,23 @@
   "dependencies": {
     "@dank074/discord-video-stream": "3.2.0",
     "@distube/ytdl-core": "^4.14.4",
-    "@types/fluent-ffmpeg": "^2.1.26",
     "axios": "^1.7.7",
+    "bcrypt": "^5.1.1",
     "discord.js-selfbot-v13": "^3.3.0",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
+    "express-session": "^1.18.0",
     "fluent-ffmpeg": "^2.1.3",
     "multer": "^1.4.5-lts.1",
     "play-dl": "^1.9.7",
     "tslib": "^2.7.0"
   },
   "devDependencies": {
+    "typescript": "^5.5.4",
     "@types/node": "^22.5.3",
-    "typescript": "^5.5.4"
+    "@types/bcrypt": "^5.0.2",
+    "@types/express-session": "^1.18.0",
+    "@types/fluent-ffmpeg": "^2.1.26",
+    "@types/multer": "^1.4.12"
   }
 }

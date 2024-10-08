@@ -1,4 +1,5 @@
 import dotenv from "dotenv"
+import bcrypt from "bcrypt";
 
 dotenv.config()
 
@@ -24,7 +25,7 @@ export default {
     // Videos server options
     server_enabled: process.env.SERVER_ENABLED ? parseBoolean(process.env.SERVER_ENABLED) : false,
     server_username: process.env.SERVER_USERNAME ? process.env.SERVER_USERNAME : 'admin',
-    server_password: process.env.SERVER_PASSWORD ? process.env.SERVER_PASSWORD : 'admin',
+    server_password: bcrypt.hashSync(process.env.SERVER_PASSWORD ? process.env.SERVER_PASSWORD : 'admin', 10),
     server_port: parseInt(process.env.SERVER_PORT ? process.env.SERVER_PORT : '8080'),
     videosFolder: process.env.VIDEOS_FOLDER ? process.env.VIDEOS_FOLDER : './videos'
 }
