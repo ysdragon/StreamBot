@@ -6,6 +6,7 @@ import path from 'path';
 import ytdl from '@distube/ytdl-core';
 import yts from 'play-dl';
 import ffmpeg from 'fluent-ffmpeg';
+import { ffmpegScreenshot } from "./utils/ffmpegScreenshot";
 
 const streamer = new Streamer(new Client());
 
@@ -572,56 +573,6 @@ async function ytSearch(title: string): Promise<string[]> {
         console.log("No videos found with the given title.");
         return [];
     }
-}
-
-let ffmpegRunning: { [key: string]: boolean } = {};
-
-async function ffmpegScreenshot(video: string): Promise<string[]> {
-    return new Promise<string[]>((resolve, reject) => {
-        if (ffmpegRunning[video]) {
-            // Wait for ffmpeg to finish
-            let wait = () => {
-                if (ffmpegRunning[video] == false) {
-                    resolve(images);
-                }
-                setTimeout(wait, 100);
-            }
-            wait();
-            return;
-        }
-        ffmpegRunning[video] = true;
-        const ffmpeg = require("fluent-ffmpeg");
-        const ts = ['10%', '30%', '50%', '70%', '90%'];
-        const images: string[] = [];
-
-        const takeScreenshots = (i: number) => {
-            if (i >= ts.length) {
-                ffmpegRunning[video] = false;
-                resolve(images);
-                return;
-            }
-            console.log(`Taking screenshot ${i + 1} of ${video} at ${ts[i]}`);
-            ffmpeg(`${config.videosFolder}/${video}`)
-                .on("end", () => {
-                    const screenshotPath = `${config.previewCache}/${video}-${i + 1}.jpg`;
-                    images.push(screenshotPath);
-                    takeScreenshots(i + 1);
-                })
-                .on("error", (err: any) => {
-                    ffmpegRunning[video] = false;
-                    reject(err);
-                })
-                .screenshots({
-                    count: 1,
-                    filename: `${video}-${i + 1}.jpg`,
-                    timestamps: [ts[i]],
-                    folder: config.previewCache,
-                    size: "640x480"
-                });
-        };
-
-        takeScreenshots(0);
-    });
 }
 
 // Run server if enabled in config

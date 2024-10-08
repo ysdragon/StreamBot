@@ -6,6 +6,7 @@ import fs from "fs";
 import axios from "axios";
 import https from "https";
 import ffmpeg from "fluent-ffmpeg"
+import { ffmpegScreenshot } from "./utils/ffmpegScreenshot";
 
 const app = express();
 const agent = new https.Agent({ rejectUnauthorized: false });
@@ -480,48 +481,6 @@ app.get("/delete/:file", (req, res) => {
   });
 });
 
-let ffmpegRunning = {};
-
-async function ffmpegScreenshot(video) {
-  return new Promise<void>((resolve, reject) => {
-    if (ffmpegRunning[video]) {
-      // wait for ffmpeg to finish
-      let wait = () => {
-        if (ffmpegRunning[video] == false) {
-          resolve();
-        }
-        setTimeout(wait, 100);
-      }
-      wait();
-      return;
-    }
-    ffmpegRunning[video] = true
-    const ts = ['10%', '30%', '50%', '70%', '90%'];
-    const takeOne = (i) => {
-      if (i >= ts.length) {
-        ffmpegRunning[video] = false;
-        resolve();
-        return;
-      }
-      console.log(`Taking screenshot ${i + 1} of ${video} at ${ts[i]}`)
-      ffmpeg(`${config.videosFolder}/${video}`).on("end", () => {
-        takeOne(i + 1);
-      }).on("error", (err) => {
-        ffmpegRunning[video] = false;
-        reject(err);
-      })
-        .screenshots({
-          count: 1,
-          filename: `${video}-${i + 1}.jpg`,
-          timestamps: [ts[i]],
-          folder: config.previewCache,
-          // take screenshot at 640x480
-          size: "640x480"
-        });
-    }
-    takeOne(0);
-  });
-}
 
 // stringify object to <ul><li>...</li></ul>
 const stringify = (obj) => {
