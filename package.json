@@ -12,7 +12,7 @@
   "author": "ysdragon",
   "license": "MIT",
   "dependencies": {
-    "@dank074/discord-video-stream": "3.2.0",
+    "@dank074/discord-video-stream": "4.0.0",
     "@distube/ytdl-core": "^4.14.4",
     "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
