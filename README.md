@@ -14,7 +14,7 @@ This is a Discord selfbot that allows streaming videos, and streams from YouTube
 - Get playback status.
 
 ## Requirements
-[node.js](https://nodejs.org/) _(version 16.9.0 or later)_  
+[bun](https://bun.sh/) _(must be added to path or installed to working directory)_  
 [ffmpeg](https://www.ffmpeg.org/) _(must be added to path or installed to working directory)_
 
 ## 🛠️ Installation Steps:
