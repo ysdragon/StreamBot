@@ -141,8 +141,10 @@ streamer.client.on('messageCreate', async (message) => {
                     const resolution = await getVideoResolution(video.path);
                     streamOpts.height = resolution.height;
                     streamOpts.width = resolution.width;
-                    streamOpts.bitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
-                    streamOpts.maxBitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
+                    if(resolution.bitrate != "N/A")
+                        streamOpts.bitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
+                    if(resolution.maxbitrate != "N/A")
+                        streamOpts.maxBitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
                 } catch (error) {
                     console.error('Unable to determine resolution:', error);
                 }
@@ -587,7 +589,7 @@ async function ytSearch(title: string): Promise<string[]> {
 }
 
 //Checking Video Resolution and Bitrate via ffprobe
-async function getVideoResolution(videoPath: string): Promise<{ width: number, height: number, bitrate: string }> {
+async function getVideoResolution(videoPath: string): Promise<{ width: number, height: number, bitrate: string, maxbitrate: string }> {
     return new Promise((resolve, reject) => {
         ffmpeg.ffprobe(videoPath, (err, metadata) => {
             if (err) {
@@ -598,7 +600,7 @@ async function getVideoResolution(videoPath: string): Promise<{ width: number, h
             console.log(videoStream);
 
             if (videoStream && videoStream.width && videoStream.height && videoStream.bit_rate) {
-                resolve({ width: videoStream.width, height: videoStream.height, bitrate: videoStream.bit_rate });
+                resolve({ width: videoStream.width, height: videoStream.height, bitrate: videoStream.bit_rate, maxbitrate: videoStream.maxBitrate });
             } else {
                 reject(new Error('Unable to get Resolution.'));
             }

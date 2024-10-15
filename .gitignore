@@ -1,6 +1,8 @@
 LICENSE
 node_modules/
 dist/
+.idea/
+package-lock.json
 .env
 bun.lockb
 videos/
