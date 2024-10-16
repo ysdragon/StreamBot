@@ -136,6 +136,19 @@ streamer.client.on('messageCreate', async (message) => {
                     return;
                 }
 
+                // Checking File Resolution
+                try {
+                    const resolution = await getVideoResolution(video.path);
+                    streamOpts.height = resolution.height;
+                    streamOpts.width = resolution.width;
+                    if(resolution.bitrate != "N/A")
+                        streamOpts.bitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
+                    if(resolution.maxbitrate != "N/A")
+                        streamOpts.maxBitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
+                } catch (error) {
+                    console.error('Unable to determine resolution:', error);
+                }
+
                 await streamer.joinVoice(guildId, channelId, streamOpts);
                 streamStatus.joined = true;
                 streamStatus.playing = true;
@@ -573,6 +586,26 @@ async function ytSearch(title: string): Promise<string[]> {
         console.log("No videos found with the given title.");
         return [];
     }
+}
+
+//Checking Video Resolution and Bitrate via ffprobe
+async function getVideoResolution(videoPath: string): Promise<{ width: number, height: number, bitrate: string, maxbitrate: string }> {
+    return new Promise((resolve, reject) => {
+        ffmpeg.ffprobe(videoPath, (err, metadata) => {
+            if (err) {
+                return reject(err);
+            }
+
+            const videoStream = metadata.streams.find(stream => stream.codec_type === 'video');
+            console.log(videoStream);
+
+            if (videoStream && videoStream.width && videoStream.height && videoStream.bit_rate) {
+                resolve({ width: videoStream.width, height: videoStream.height, bitrate: videoStream.bit_rate, maxbitrate: videoStream.maxBitrate });
+            } else {
+                reject(new Error('Unable to get Resolution.'));
+            }
+        });
+    });
 }
 
 // Run server if enabled in config
