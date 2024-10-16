@@ -119,8 +119,6 @@ An optional basic HTTP server can be enabled to manage the video library:
 - Delete videos
 - Generate video preview thumbnails
 
-Protected by HTTP basic auth.
-
 ## Todo
 
 - [x]  Adding ytsearch and ytplay commands   
