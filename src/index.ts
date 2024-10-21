@@ -6,7 +6,7 @@ import path from 'path';
 import ytdl from '@distube/ytdl-core';
 import yts from 'play-dl';
 import ffmpeg from 'fluent-ffmpeg';
-import { ffmpegScreenshot } from "./utils/ffmpegScreenshot";
+import { ffmpegScreenshot } from "./utils/ffmpeg";
 
 const streamer = new Streamer(new Client());
 
@@ -18,7 +18,7 @@ const streamOpts: StreamOptions = {
     maxBitrateKbps: config.maxBitrateKbps,
     hardwareAcceleratedDecoding: config.hardwareAcceleratedDecoding,
     videoCodec: config.videoCodec === 'VP8' ? 'VP8' : 'H264',
-    
+
     /**
      * Advanced options
      * 
@@ -36,7 +36,7 @@ const streamOpts: StreamOptions = {
      * Encoding preset for H264 or H265. The faster it is, the lower the quality
      * Available presets: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow
      */
-    h26xPreset: 'ultrafast'    
+    h26xPreset: 'ultrafast'
 };
 
 // Create the videosFolder dir if it doesn't exist
@@ -327,7 +327,7 @@ streamer.client.on('messageCreate', async (message) => {
 
                 try {
                     const hasUnderscore = vid_name.name.includes('_');
-                                                        //                                                Replace _ with space
+                    //                                                Replace _ with space
                     const thumbnails = await ffmpegScreenshot(`${hasUnderscore ? vid_name.name : vid_name.name.replace(/_/g, ' ')}${path.extname(vid_name.path)}`);
                     if (thumbnails.length > 0) {
                         const attachments: MessageAttachment[] = [];

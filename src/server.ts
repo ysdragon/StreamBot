@@ -8,7 +8,7 @@ import fs from "fs";
 import axios from "axios";
 import https from "https";
 import ffmpeg from "fluent-ffmpeg"
-import { ffmpegScreenshot } from "./utils/ffmpegScreenshot";
+import { ffmpegScreenshot } from "./utils/ffmpeg";
 
 const app = express();
 const agent = new https.Agent({ rejectUnauthorized: false });
