@@ -2,7 +2,7 @@
 
 This is a Discord selfbot that allows streaming videos, and streams from YouTube and direct links to a Discord voice channel.
 
-## 🧐Features
+## Features
 
 - Stream videos from a local folder.
 - Stream and search for YouTube videos using titles.
@@ -17,7 +17,7 @@ This is a Discord selfbot that allows streaming videos, and streams from YouTube
 [bun](https://bun.sh/) _(must be added to path or installed to working directory)_  
 [ffmpeg](https://www.ffmpeg.org/) _(must be added to path or installed to working directory)_
 
-## 🛠️ Installation Steps:
+## Installation Steps:
 
 This project is [hosted on github](https://github.com/ysdragon/StreamBot).
 1. You can clone this project directly using this command:
@@ -59,7 +59,7 @@ If you want to use Docker Compose, follow these steps:
    docker compose up -d
    ```
    
-## 🛠️ Commands
+## Commands
 
 ```
 play <video name> - Play a video from the local folder.
@@ -76,7 +76,7 @@ preview <video name> - Generate and obtain preview thumbnails of a specific vide
 help - Show help message.
 ```
 
-## 🛠️ Configuration
+## Configuration
 
 Configuration is done via `.env`:
 
@@ -92,6 +92,7 @@ PREVIEW_CACHE = "./tmp/preview-cache" # The local path where your self-bot will 
 VIDEO_CACHE = "./tmp/video-cache" # The local path where your self-bot will cache youtube videos
 
 # Stream options
+RESPECT_VIDEO_PARAMS = "false"  # This option is used to respect video parameters such as width, height, fps, bitrate, and max bitrate.
 STREAM_WIDTH = "1280" # The width of the video stream in pixels
 STREAM_HEIGHT = "720" # The height of the video stream in pixels
 STREAM_FPS = "30" # The frames per second (FPS) of the video stream
@@ -134,6 +135,7 @@ This bot may violate Discord's Terms of Service. Use at your own risk.
 
 ## إبراء الذمة
 أتبرأ من أي استخدام غير أخلاقي لهذا المشروع أمام الله.
+
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](https://github.com/ysdragon/StreamBot/blob/main/LICENSE) file for details.
