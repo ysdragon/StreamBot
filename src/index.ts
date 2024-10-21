@@ -155,17 +155,25 @@ streamer.client.on('messageCreate', async (message) => {
                     return;
                 }
 
-                // Checking File Resolution
+                // Checking video params
                 try {
                     const resolution = await getVideoParams(video.path);
                     streamOpts.height = resolution.height;
                     streamOpts.width = resolution.width;
-                    if (resolution.bitrate != "N/A")
+                    if (resolution.bitrate != "N/A") {
                         streamOpts.bitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
-                    if (resolution.maxbitrate != "N/A")
+                    }
+
+                    if (resolution.maxbitrate != "N/A") {
                         streamOpts.maxBitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
+                    }
+
+                    if (resolution.fps) {
+                        streamOpts.fps = resolution.fps
+                    }
+
                 } catch (error) {
-                    console.error('Unable to determine resolution:', error);
+                    console.error('Unable to determine resolution.', error);
                 }
 
                 await streamer.joinVoice(guildId, channelId, streamOpts);

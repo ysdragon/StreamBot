@@ -50,8 +50,8 @@ export async function ffmpegScreenshot(video: string): Promise<string[]> {
     });
 }
 
-// Checking video params via ffprobe
-export async function getVideoParams(videoPath: string): Promise<{ width: number, height: number, bitrate: string, maxbitrate: string }> {
+// Checking video resolution and bitrate via ffprobe
+export async function getVideoParams(videoPath: string): Promise<{ width: number, height: number, bitrate: string, maxbitrate: string, fps: number }> {
     return new Promise((resolve, reject) => {
         ffmpeg.ffprobe(videoPath, (err, metadata) => {
             if (err) {
@@ -61,7 +61,16 @@ export async function getVideoParams(videoPath: string): Promise<{ width: number
             const videoStream = metadata.streams.find(stream => stream.codec_type === 'video');
 
             if (videoStream && videoStream.width && videoStream.height && videoStream.bit_rate) {
-                resolve({ width: videoStream.width, height: videoStream.height, bitrate: videoStream.bit_rate, maxbitrate: videoStream.maxBitrate });
+                const rFrameRate = videoStream.r_frame_rate || videoStream.avg_frame_rate;
+
+                if (rFrameRate) {
+                    const [numerator, denominator] = rFrameRate.split('/').map(Number);
+                    videoStream.fps = numerator / denominator;
+                } else {
+                    videoStream.fps = 0
+                }
+
+                resolve({ width: videoStream.width, height: videoStream.height, bitrate: videoStream.bit_rate, maxbitrate: videoStream.maxBitrate, fps: videoStream.fps });
             } else {
                 reject(new Error('Unable to get Resolution.'));
             }
