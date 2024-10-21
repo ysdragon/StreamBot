@@ -6,7 +6,7 @@ import path from 'path';
 import ytdl from '@distube/ytdl-core';
 import yts from 'play-dl';
 import ffmpeg from 'fluent-ffmpeg';
-import { getVideoResolution, ffmpegScreenshot } from "./utils/ffmpeg";
+import { getVideoParams, ffmpegScreenshot } from "./utils/ffmpeg";
 
 const streamer = new Streamer(new Client());
 
@@ -157,7 +157,7 @@ streamer.client.on('messageCreate', async (message) => {
 
                 // Checking File Resolution
                 try {
-                    const resolution = await getVideoResolution(video.path);
+                    const resolution = await getVideoParams(video.path);
                     streamOpts.height = resolution.height;
                     streamOpts.width = resolution.width;
                     if (resolution.bitrate != "N/A")
