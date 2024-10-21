@@ -49,3 +49,24 @@ export async function ffmpegScreenshot(video: string): Promise<string[]> {
         takeScreenshots(0);
     });
 }
+
+// Checking Video Resolution and Bitrate via ffprobe
+export async function getVideoResolution(videoPath: string): Promise<{ width: number, height: number, bitrate: string, maxbitrate: string }> {
+    return new Promise((resolve, reject) => {
+        ffmpeg.ffprobe(videoPath, (err, metadata) => {
+            if (err) {
+                return reject(err);
+            }
+
+            const videoStream = metadata.streams.find(stream => stream.codec_type === 'video');
+            console.log(videoStream);
+
+            if (videoStream && videoStream.width && videoStream.height && videoStream.bit_rate) {
+                resolve({ width: videoStream.width, height: videoStream.height, bitrate: videoStream.bit_rate, maxbitrate: videoStream.maxBitrate });
+            } else {
+                reject(new Error('Unable to get Resolution.'));
+            }
+        });
+    });
+}
+

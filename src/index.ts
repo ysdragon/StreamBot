@@ -6,7 +6,7 @@ import path from 'path';
 import ytdl from '@distube/ytdl-core';
 import yts from 'play-dl';
 import ffmpeg from 'fluent-ffmpeg';
-import { ffmpegScreenshot } from "./utils/ffmpeg";
+import { getVideoResolution, ffmpegScreenshot } from "./utils/ffmpeg";
 
 const streamer = new Streamer(new Client());
 
@@ -153,6 +153,19 @@ streamer.client.on('messageCreate', async (message) => {
                 if (!video) {
                     message.reply('** Video not found **');
                     return;
+                }
+
+                // Checking File Resolution
+                try {
+                    const resolution = await getVideoResolution(video.path);
+                    streamOpts.height = resolution.height;
+                    streamOpts.width = resolution.width;
+                    if (resolution.bitrate != "N/A")
+                        streamOpts.bitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
+                    if (resolution.maxbitrate != "N/A")
+                        streamOpts.maxBitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
+                } catch (error) {
+                    console.error('Unable to determine resolution:', error);
                 }
 
                 await streamer.joinVoice(guildId, channelId, streamOpts);
