@@ -155,25 +155,28 @@ streamer.client.on('messageCreate', async (message) => {
                     return;
                 }
 
-                // Checking video params
-                try {
-                    const resolution = await getVideoParams(video.path);
-                    streamOpts.height = resolution.height;
-                    streamOpts.width = resolution.width;
-                    if (resolution.bitrate != "N/A") {
-                        streamOpts.bitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
-                    }
+                // Check if the respect video parameters environment variable is enabled
+                if (config.respect_video_params) {
+                    // Checking video params
+                    try {
+                        const resolution = await getVideoParams(video.path);
+                        streamOpts.height = resolution.height;
+                        streamOpts.width = resolution.width;
+                        if (resolution.bitrate != "N/A") {
+                            streamOpts.bitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
+                        }
 
-                    if (resolution.maxbitrate != "N/A") {
-                        streamOpts.maxBitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
-                    }
+                        if (resolution.maxbitrate != "N/A") {
+                            streamOpts.maxBitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
+                        }
 
-                    if (resolution.fps) {
-                        streamOpts.fps = resolution.fps
-                    }
+                        if (resolution.fps) {
+                            streamOpts.fps = resolution.fps
+                        }
 
-                } catch (error) {
-                    console.error('Unable to determine resolution.', error);
+                    } catch (error) {
+                        console.error('Unable to determine resolution, using static resolution....', error);
+                    }
                 }
 
                 await streamer.joinVoice(guildId, channelId, streamOpts);

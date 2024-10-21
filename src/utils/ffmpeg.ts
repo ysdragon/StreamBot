@@ -50,7 +50,7 @@ export async function ffmpegScreenshot(video: string): Promise<string[]> {
     });
 }
 
-// Checking video resolution and bitrate via ffprobe
+// Checking video params
 export async function getVideoParams(videoPath: string): Promise<{ width: number, height: number, bitrate: string, maxbitrate: string, fps: number }> {
     return new Promise((resolve, reject) => {
         ffmpeg.ffprobe(videoPath, (err, metadata) => {
