@@ -12,7 +12,8 @@ export default {
     videoChannelId: process.env.VIDEO_CHANNEL_ID ? process.env.VIDEO_CHANNEL_ID : '',
 
     // General options
-    previewCache: process.env.PREVIEW_CACHE ? process.env.PREVIEW_CACHE : './tmp/preview-cache',
+    videosDir: process.env.VIDEOS_DIR ? process.env.VIDEOS_DIR : './videos',
+    previewCacheDir: process.env.PREVIEW_CACHE_DIR ? process.env.PREVIEW_CACHE_DIR : './tmp/preview-cache',
     ytVideoCache: process.env.YT_VIDEO_CACHE ? parseBoolean(process.env.YT_VIDEO_CACHE) : false,
     ytVideoCacheDir: process.env.YT_VIDEO_CACHE_DIR ? process.env.YT_VIDEO_CACHE_DIR : './tmp/video-cache',
 
@@ -31,7 +32,6 @@ export default {
     server_username: process.env.SERVER_USERNAME ? process.env.SERVER_USERNAME : 'admin',
     server_password: bcrypt.hashSync(process.env.SERVER_PASSWORD ? process.env.SERVER_PASSWORD : 'admin', 10),
     server_port: parseInt(process.env.SERVER_PORT ? process.env.SERVER_PORT : '8080'),
-    videosFolder: process.env.VIDEOS_FOLDER ? process.env.VIDEOS_FOLDER : './videos'
 }
 
 function parseBoolean(value: string | undefined): boolean {

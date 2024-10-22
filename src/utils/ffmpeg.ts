@@ -27,9 +27,9 @@ export async function ffmpegScreenshot(video: string): Promise<string[]> {
                 return;
             }
             console.log(`Taking screenshot ${i + 1} of ${video} at ${ts[i]}`);
-            ffmpeg(`${config.videosFolder}/${video}`)
+            ffmpeg(`${config.videosDir}/${video}`)
                 .on("end", () => {
-                    const screenshotPath = `${config.previewCache}/${video}-${i + 1}.jpg`;
+                    const screenshotPath = `${config.previewCacheDir}/${video}-${i + 1}.jpg`;
                     images.push(screenshotPath);
                     takeScreenshots(i + 1);
                 })
@@ -41,7 +41,7 @@ export async function ffmpegScreenshot(video: string): Promise<string[]> {
                     count: 1,
                     filename: `${video}-${i + 1}.jpg`,
                     timestamps: [ts[i]],
-                    folder: config.previewCache,
+                    folder: config.previewCacheDir,
                     size: "640x480"
                 });
         };

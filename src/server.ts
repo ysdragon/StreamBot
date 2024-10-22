@@ -22,23 +22,23 @@ app.use(session({
 }));
 
 // Create the videosFolder dir if it doesn't exist
-if (!fs.existsSync(config.videosFolder)) {
-  fs.mkdirSync(config.videosFolder);
+if (!fs.existsSync(config.videosDir)) {
+  fs.mkdirSync(config.videosDir);
 }
 
 // Create previewCache parent dir if it doesn't exist
-if (!fs.existsSync(path.dirname(config.previewCache))) {
-  fs.mkdirSync(path.dirname(config.previewCache), { recursive: true });
+if (!fs.existsSync(path.dirname(config.previewCacheDir))) {
+  fs.mkdirSync(path.dirname(config.previewCacheDir), { recursive: true });
 }
 
 // Create the previewCache dir if it doesn't exist
-if (!fs.existsSync(config.previewCache)) {
-  fs.mkdirSync(config.previewCache);
+if (!fs.existsSync(config.previewCacheDir)) {
+  fs.mkdirSync(config.previewCacheDir);
 }
 
 const storage = multer.diskStorage({
   destination: (req: any, file: any, cb: (arg0: null, arg1: string) => void) => {
-    cb(null, config.videosFolder);
+    cb(null, config.videosDir);
   },
   filename: (req: any, file: { originalname: any; }, cb: (arg0: null, arg1: any) => void) => {
     cb(null, file.originalname);
@@ -363,7 +363,7 @@ app.get("/logout", (req, res) => {
 
 // Main route
 app.get("/", (req, res) => {
-  fs.readdir(config.videosFolder, (err, files) => {
+  fs.readdir(config.videosDir, (err, files) => {
     if (err) {
       console.error(err);
       res.status(500).send("Internal Server Error");
@@ -371,7 +371,7 @@ app.get("/", (req, res) => {
     }
 
     const fileList = files.map((file) => {
-      const stats = fs.statSync(path.join(config.videosFolder, file));
+      const stats = fs.statSync(path.join(config.videosDir, file));
       return { name: file, size: prettySize(stats.size) };
     });
 
@@ -502,7 +502,7 @@ app.post("/api/upload", upload.single("file"), (req, res) => {
 app.post("/api/remote_upload", upload.single("link"), async (req, res) => {
   const link = req.body.link;
   const filename = link.substring(link.lastIndexOf('/') + 1);
-  const filepath = path.join(config.videosFolder, filename);
+  const filepath = path.join(config.videosDir, filename);
 
   try {
     const response = await axios.get(link, { responseType: "stream", httpsAgent: agent });
@@ -526,12 +526,12 @@ app.post("/api/remote_upload", upload.single("link"), async (req, res) => {
 
 app.get("/preview/:file", (req, res) => {
   const file = req.params.file;
-  if (!fs.existsSync(path.join(config.videosFolder, file))) {
+  if (!fs.existsSync(path.join(config.videosDir, file))) {
     res.status(404).send("Not Found");
     return;
   }
 
-  ffmpeg.ffprobe(`${config.videosFolder}/${file}`, (err, metadata) => {
+  ffmpeg.ffprobe(`${config.videosDir}/${file}`, (err, metadata) => {
     if (err) {
       console.log(err);
       res.status(500).send("Internal Server Error");
@@ -618,7 +618,7 @@ app.get("/api/preview/:file/:id", async (req, res) => {
   }
 
   // check if preview exists
-  const previewFile = path.resolve(config.previewCache, `${file}-${id}.jpg`);
+  const previewFile = path.resolve(config.previewCacheDir, `${file}-${id}.jpg`);
   if (fs.existsSync(previewFile)) {
     res.sendFile(previewFile);
   } else {
@@ -635,7 +635,7 @@ app.get("/api/preview/:file/:id", async (req, res) => {
 
 app.get("/delete/:file", (req, res) => {
   const file = req.params.file;
-  const filePath = path.join(config.videosFolder, file);
+  const filePath = path.join(config.videosDir, file);
 
   if (fs.existsSync(filePath)) {
     fs.unlink(filePath, (err) => {

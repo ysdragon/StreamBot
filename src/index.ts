@@ -40,8 +40,8 @@ const streamOpts: StreamOptions = {
 };
 
 // Create the videosFolder dir if it doesn't exist
-if (!fs.existsSync(config.videosFolder)) {
-    fs.mkdirSync(config.videosFolder);
+if (!fs.existsSync(config.videosDir)) {
+    fs.mkdirSync(config.videosDir);
 }
 
 // Create previewCache/ytVideoCacheDir parent dir if it doesn't exist
@@ -50,8 +50,8 @@ if (!fs.existsSync(path.dirname(config.ytVideoCacheDir))) {
 }
 
 // Create the previewCache dir if it doesn't exist
-if (!fs.existsSync(config.previewCache)) {
-    fs.mkdirSync(config.previewCache);
+if (!fs.existsSync(config.previewCacheDir)) {
+    fs.mkdirSync(config.previewCacheDir);
 }
 
 // Create the ytVideoCacheDir dir if it doesn't exist
@@ -61,11 +61,11 @@ if (!fs.existsSync(config.ytVideoCacheDir)) {
 
 const tmpVideo = `${config.ytVideoCacheDir}/temp_vid.mp4`;
 
-const videoFiles = fs.readdirSync(config.videosFolder);
+const videoFiles = fs.readdirSync(config.videosDir);
 let videos = videoFiles.map(file => {
     const fileName = path.parse(file).name;
     // replace space with _
-    return { name: fileName.replace(/ /g, '_'), path: path.join(config.videosFolder, file) };
+    return { name: fileName.replace(/ /g, '_'), path: path.join(config.videosDir, file) };
 });
 
 // print out all videos
@@ -332,11 +332,11 @@ streamer.client.on('messageCreate', async (message) => {
                 break;
             case 'refresh':
                 // refresh video list
-                const videoFiles = fs.readdirSync(config.videosFolder);
+                const videoFiles = fs.readdirSync(config.videosDir);
                 videos = videoFiles.map(file => {
                     const fileName = path.parse(file).name;
                     // replace space with _
-                    return { name: fileName.replace(/ /g, '_'), path: path.join(config.videosFolder, file) };
+                    return { name: fileName.replace(/ /g, '_'), path: path.join(config.videosDir, file) };
                 });
                 message.reply('video list refreshed ' + videos.length + ' videos found.\n' + videos.map(m => m.name).join('\n'));
                 break;
