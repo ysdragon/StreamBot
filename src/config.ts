@@ -18,7 +18,7 @@ export default {
     ytVideoCacheDir: process.env.YT_VIDEO_CACHE_DIR ? process.env.YT_VIDEO_CACHE_DIR : './tmp/video-cache',
 
     // Stream options
-    respect_video_params: process.env.RESPECT_VIDEO_PARAMS ? parseBoolean(process.env.RESPECT_VIDEO_PARAMS) : false,
+    respect_video_params: process.env.STREAM_RESPECT_VIDEO_PARAMS ? parseBoolean(process.env.STREAM_RESPECT_VIDEO_PARAMS) : false,
     width: process.env.STREAM_WIDTH ? parseInt(process.env.STREAM_WIDTH) : 1280,
     height: process.env.STREAM_HEIGHT ? parseInt(process.env.STREAM_HEIGHT) : 720,
     fps: process.env.STREAM_FPS ? parseInt(process.env.STREAM_FPS) : 30,
