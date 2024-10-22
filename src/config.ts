@@ -10,8 +10,11 @@ export default {
     guildId: process.env.GUILD_ID ? process.env.GUILD_ID : '',
     cmdChannelId: process.env.COMMAND_CHANNEL_ID ? process.env.COMMAND_CHANNEL_ID : '',
     videoChannelId: process.env.VIDEO_CHANNEL_ID ? process.env.VIDEO_CHANNEL_ID : '',
+
+    // General options
     previewCache: process.env.PREVIEW_CACHE ? process.env.PREVIEW_CACHE : './tmp/preview-cache',
-    videoCache: process.env.VIDEO_CACHE ? process.env.VIDEO_CACHE : './tmp/video-cache',
+    ytVideoCache: process.env.YT_VIDEO_CACHE ? parseBoolean(process.env.YT_VIDEO_CACHE) : false,
+    ytVideoCacheDir: process.env.YT_VIDEO_CACHE_DIR ? process.env.YT_VIDEO_CACHE_DIR : './tmp/video-cache',
 
     // Stream options
     respect_video_params: process.env.RESPECT_VIDEO_PARAMS ? parseBoolean(process.env.RESPECT_VIDEO_PARAMS) : false,

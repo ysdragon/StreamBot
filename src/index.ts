@@ -44,9 +44,9 @@ if (!fs.existsSync(config.videosFolder)) {
     fs.mkdirSync(config.videosFolder);
 }
 
-// Create previewCache/videoCache parent dir if it doesn't exist
-if (!fs.existsSync(path.dirname(config.videoCache))) {
-    fs.mkdirSync(path.dirname(config.videoCache), { recursive: true });
+// Create previewCache/ytVideoCacheDir parent dir if it doesn't exist
+if (!fs.existsSync(path.dirname(config.ytVideoCacheDir))) {
+    fs.mkdirSync(path.dirname(config.ytVideoCacheDir), { recursive: true });
 }
 
 // Create the previewCache dir if it doesn't exist
@@ -54,12 +54,12 @@ if (!fs.existsSync(config.previewCache)) {
     fs.mkdirSync(config.previewCache);
 }
 
-// Create the videoCache dir if it doesn't exist
-if (!fs.existsSync(config.videoCache)) {
-    fs.mkdirSync(config.videoCache);
+// Create the ytVideoCacheDir dir if it doesn't exist
+if (!fs.existsSync(config.ytVideoCacheDir)) {
+    fs.mkdirSync(config.ytVideoCacheDir);
 }
 
-const tmpVideo = `${config.videoCache}/temp_vid.mp4`;
+const tmpVideo = `${config.ytVideoCacheDir}/temp_vid.mp4`;
 
 const videoFiles = fs.readdirSync(config.videosFolder);
 let videos = videoFiles.map(file => {
@@ -498,7 +498,7 @@ async function cleanupStreamStatus() {
     };
 }
 
-async function ytPlay(ytVideo: any): Promise<string | null> {
+async function ytVideoCache(ytVideo: any): Promise<string | null> {
     // Filter formats to get the best video format without audio
     const videoFormats = ytVideo.formats.filter(
         (format: { hasVideo: boolean; hasAudio: boolean }) =>
@@ -568,8 +568,17 @@ async function getVideoUrl(videoUrl: string): Promise<string | null> {
 
             return highestTsFormat ? highestTsFormat.url : null;
         } else {
-            // If it's not a livestream, play the video
-            return await ytPlay(video);
+            // Check if youtube video caching is enabled
+            if (config.ytVideoCache) {
+                return await ytVideoCache(video);
+            } else {
+                const videoFormats = video.formats
+                    .filter((format: {
+                        hasVideo: any; hasAudio: any;
+                    }) => format.hasVideo && format.hasAudio);
+
+                return videoFormats[0].url ? videoFormats[0].url : null;
+            }
         }
     } catch (error) {
         console.error("Error occurred while getting video URL:", error);
@@ -590,7 +599,19 @@ async function ytPlayTitle(title: string): Promise<string | null> {
             // Ensure videoId is valid before proceeding
             if (videoId) {
                 const ytVideoInfo = await ytdl.getInfo(videoId);
-                return await ytPlay(ytVideoInfo);
+
+                // Check if youtube video caching is enabled
+                if (config.ytVideoCache) {
+                    return await ytVideoCache(video);
+                } else {
+                    const videoFormats = ytVideoInfo.formats
+                        .filter((format: {
+                            hasVideo: any; hasAudio: any;
+                        }) => format.hasVideo && format.hasAudio);
+
+                    return videoFormats[0].url ? videoFormats[0].url : null;
+                }
+
             }
         }
 
