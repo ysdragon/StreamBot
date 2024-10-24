@@ -1,4 +1,4 @@
-# Use the official Bun alpine image as the base image
+# Use the official Bun debian image as the base image
 FROM oven/bun:debian
 
 # Set the working directory
