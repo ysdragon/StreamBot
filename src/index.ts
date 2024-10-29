@@ -554,7 +554,7 @@ async function ytVideoCache(ytVideo: any): Promise<string | null> {
 
 async function getVideoUrl(videoUrl: string): Promise<string | null> {
     try {
-        const video = await ytdl.getInfo(videoUrl);
+        const video = await ytdl.getInfo(videoUrl, { playerClients: ['WEB', 'ANDROID'] });
         const videoDetails = video.videoDetails;
 
         if (videoDetails.isLiveContent) {
@@ -598,7 +598,7 @@ async function ytPlayTitle(title: string): Promise<string | null> {
 
             // Ensure videoId is valid before proceeding
             if (videoId) {
-                const ytVideoInfo = await ytdl.getInfo(videoId);
+                const ytVideoInfo = await ytdl.getInfo(videoId, { playerClients: ['WEB', 'ANDROID'] });
 
                 // Check if youtube video caching is enabled
                 if (config.ytVideoCache) {
