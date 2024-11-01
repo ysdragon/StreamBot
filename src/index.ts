@@ -312,24 +312,25 @@ streamer.client.on('messageCreate', async (message) => {
                 console.log("Stopped playing")
                 message.reply('**Stopped playing.**');
                 break;
-            case 'pause':
-                if (streamStatus.playing) {
-                    command?.kill("SIGSTOP");
-                    message.reply('Paused');
-                    streamStatus.playing = false;
-                } else {
-                    message.reply('Not playing');
-                }
-                break;
-            case 'resume':
-                if (!streamStatus.playing) {
-                    command?.kill("SIGCONT");
-                    message.reply('Resumed');
-                    streamStatus.playing = true;
-                } else {
-                    message.reply('Already Playing!');
-                }
-                break;
+            // Disabled pause and resume commands until I find a better implementation
+            // case 'pause':
+            //     if (streamStatus.playing) {
+            //         command?.kill("SIGSTOP");
+            //         message.reply('Paused');
+            //         streamStatus.playing = false;
+            //     } else {
+            //         message.reply('Not playing');
+            //     }
+            //     break;
+            // case 'resume':
+            //     if (!streamStatus.playing) {
+            //         command?.kill("SIGCONT");
+            //         message.reply('Resumed');
+            //         streamStatus.playing = true;
+            //     } else {
+            //         message.reply('Already Playing!');
+            //     }
+            //     break;
             case 'list':
                 message.reply(`Available videos:\n${videos.map(m => m.name).join('\n')}`);
                 break;
