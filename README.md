@@ -14,8 +14,8 @@ This is a Discord selfbot that allows streaming videos, and streams from YouTube
 - Get playback status.
 
 ## Requirements
-[bun](https://bun.sh/) _(must be added to path or installed to working directory)_  
-[ffmpeg](https://www.ffmpeg.org/) _(must be added to path or installed to working directory)_
+[Node.js](https://nodejs.org/) _(version 16.9.0 or later)_  
+[FFmpeg](https://www.ffmpeg.org/) _(must be added to path or installed to working directory)_
 
 ## Installation Steps:
 
@@ -26,7 +26,7 @@ This project is [hosted on github](https://github.com/ysdragon/StreamBot).
 git clone https://github.com/ysdragon/StreamBot
 ```
 
-2. Use [bun](https://bun.sh) to install all the dependencies:
+2. Use [bun](https://bun.sh) or any other package manager to install all the dependencies:
 ```
 bun install 
 ```

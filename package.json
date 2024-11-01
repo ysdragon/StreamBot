@@ -4,10 +4,10 @@
   "description": "A self bot to stream movies/videos to Discord.",
   "main": "dist/index.js",
   "scripts": {
-    "start": "bun ./dist/index.js",
-    "server": "bun ./dist/server.js",
-    "build": "bunx tsc",
-    "watch": "bunx tsc -w"
+    "start": "node ./dist/index.js",
+    "server": "node ./dist/server.js",
+    "build": "npx tsc",
+    "watch": "npx tsc -w"
   },
   "author": "ysdragon",
   "license": "MIT",
