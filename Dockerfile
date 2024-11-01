@@ -1,4 +1,4 @@
-# Use the official nodejs lts alpine image as the base image
+# Use the official nodejs 22 alpine image as the base image
 FROM node:22-alpine
 
 # Set the working directory

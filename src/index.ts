@@ -33,12 +33,11 @@ const streamOpts: StreamOptions = {
      * Available presets: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow
      */
     h26xPreset: 'ultrafast',
-
     /**
      * Adds ffmpeg params to minimize latency and start outputting video as fast as possible.
      *  Might create lag in video output in some rare cases
      */
-    minimizeLatency: true,
+    minimizeLatency: false,
     /**
      * ChaCha20-Poly1305 Encryption is faster than AES-256-GCM, except when using AES-NI
      */
@@ -307,7 +306,6 @@ streamer.client.on('messageCreate', async (message) => {
                     channelId: '',
                     cmdChannelId: streamStatus.channelInfo.cmdChannelId
                 }
-                // use sigkill??
                 command?.cancel()
                 console.log("Stopped playing")
                 message.reply('**Stopped playing.**');
