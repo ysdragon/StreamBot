@@ -1,4 +1,4 @@
-import config from "./config";
+import config from "./config.js";
 import express from "express";
 import session from "express-session";
 import bcrypt from "bcrypt";
@@ -8,7 +8,7 @@ import fs from "fs";
 import axios from "axios";
 import https from "https";
 import ffmpeg from "fluent-ffmpeg"
-import { ffmpegScreenshot } from "./utils/ffmpeg";
+import { ffmpegScreenshot } from "./utils/ffmpeg.js";
 
 const app = express();
 const agent = new https.Agent({ rejectUnauthorized: false });

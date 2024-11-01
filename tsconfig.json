@@ -11,15 +11,19 @@
     "outDir": "dist",
     "rootDir": "src",
     /* Language and Environment */
-    "target": "es2022", /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
+    "target": "ESNext", /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
     /* Modules */
-    "module": "commonjs", /* Specify what module code is generated. */
+    "module": "NodeNext", /* Specify what module code is generated. */
+    "moduleResolution": "NodeNext",
     /* Emit */
     "importHelpers": true, /* Allow importing helper functions from tslib once per project, instead of including them per-file. */
     "esModuleInterop": true, /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */
     "forceConsistentCasingInFileNames": true, /* Ensure that casing is correct in imports. */
     /* Type Checking */
     "strict": true, /* Enable all strict type-checking options. */
-    "skipLibCheck": true /* Skip type checking all .d.ts files. */
+    "skipLibCheck": true, /* Skip type checking all .d.ts files. */
+
+    "allowJs": true, 
+    "declaration": true
   }
 }

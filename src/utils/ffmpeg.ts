@@ -1,4 +1,4 @@
-import config from "../config";
+import config from "../config.js";
 import ffmpeg from "fluent-ffmpeg"
 
 let ffmpegRunning: { [key: string]: boolean } = {};
