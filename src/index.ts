@@ -96,7 +96,7 @@ streamer.client.on("ready", () => {
     }
 });
 
-let streamStatus = {
+const streamStatus = {
     joined: false,
     joinsucc: false,
     playing: false,
@@ -152,8 +152,8 @@ streamer.client.on('messageCreate', async (message) => {
                     return;
                 }
                 // Get video name and find video file
-                let videoname = args.shift()
-                let video = videos.find(m => m.name == videoname);
+                const videoname = args.shift()
+                const video = videos.find(m => m.name == videoname);
 
                 if (!video) {
                     message.reply('** Video not found **');
@@ -204,7 +204,7 @@ streamer.client.on('messageCreate', async (message) => {
                     return;
                 }
 
-                let link = args.shift() || '';
+                const link = args.shift() || '';
 
                 if (!link) {
                     message.reply('**Please provide a direct link/Youtube Link.**')
@@ -247,7 +247,7 @@ streamer.client.on('messageCreate', async (message) => {
                     return;
                 }
 
-                let title = args.length > 1 ? args.slice(1).join(' ') : args[1] || args.shift() || '';
+                const title = args.length > 1 ? args.slice(1).join(' ') : args[1] || args.shift() || '';
 
                 if (!title) {
                     message.reply('**Please provide a Youtube title!**')
@@ -274,7 +274,7 @@ streamer.client.on('messageCreate', async (message) => {
 
                 break;
             case 'ytsearch':
-                let query = args.length > 1 ? args.slice(1).join(' ') : args[1] || args.shift() || '';
+                const query = args.length > 1 ? args.slice(1).join(' ') : args[1] || args.shift() || '';
 
                 if (!query) {
                     message.reply('**Please provide a Youtube title!**')
@@ -346,8 +346,8 @@ streamer.client.on('messageCreate', async (message) => {
                 message.reply('video list refreshed ' + videos.length + ' videos found.\n' + videos.map(m => m.name).join('\n'));
                 break;
             case 'preview':
-                let vid = args.shift();
-                let vid_name = videos.find(m => m.name === vid);
+                const vid = args.shift();
+                const vid_name = videos.find(m => m.name === vid);
 
                 if (!vid_name) {
                     message.reply('** Video not found **');
