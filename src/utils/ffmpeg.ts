@@ -1,13 +1,13 @@
 import config from "../config.js";
 import ffmpeg from "fluent-ffmpeg"
 
-let ffmpegRunning: { [key: string]: boolean } = {};
+const ffmpegRunning: { [key: string]: boolean } = {};
 
 export async function ffmpegScreenshot(video: string): Promise<string[]> {
     return new Promise<string[]>((resolve, reject) => {
         if (ffmpegRunning[video]) {
             // Wait for ffmpeg to finish
-            let wait = (images: string[]) => {
+            const wait = (images: string[]) => {
                 if (ffmpegRunning[video] == false) {
                     resolve(images);
                 }
@@ -33,7 +33,7 @@ export async function ffmpegScreenshot(video: string): Promise<string[]> {
                     images.push(screenshotPath);
                     takeScreenshots(i + 1);
                 })
-                .on("error", (err: any) => {
+                .on("error", (err: Error) => {
                     ffmpegRunning[video] = false;
                     reject(err);
                 })

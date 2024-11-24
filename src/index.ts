@@ -96,7 +96,7 @@ streamer.client.on("ready", () => {
     }
 });
 
-let streamStatus = {
+const streamStatus = {
     joined: false,
     joinsucc: false,
     playing: false,
@@ -134,181 +134,196 @@ streamer.client.on('voiceStateUpdate', (oldState, newState) => {
 })
 
 streamer.client.on('messageCreate', async (message) => {
-    if (message.author.bot) return; // ignore bots
-    if (message.author.id === streamer.client.user?.id) return; // ignore self
-    if (!config.cmdChannelId.includes(message.channel.id.toString())) return; // ignore non-command channels
-    if (!message.content.startsWith(config.prefix!)) return; // ignore non-commands
-    const args = message.content.slice(config.prefix!.length).trim().split(/ +/); // split command and arguments
+    if (
+        message.author.bot || 
+        message.author.id === streamer.client.user?.id || 
+        !config.cmdChannelId.includes(message.channel.id.toString()) || 
+        !message.content.startsWith(config.prefix!)
+    ) return; // Ignore bots, self, non-command channels, and non-commands
 
-    if (args.length === 0) return;
+    const args = message.content.slice(config.prefix!.length).trim().split(/ +/); // Split command and arguments
+
+    if (args.length === 0) return; // No arguments provided
+
     const user_cmd = args.shift()!.toLowerCase();
     const [guildId, channelId] = [config.guildId, config.videoChannelId!];
 
     if (config.cmdChannelId.includes(message.channel.id)) {
         switch (user_cmd) {
             case 'play':
-                if (streamStatus.joined) {
-                    message.reply('** Already joined **');
-                    return;
-                }
-                // Get video name and find video file
-                let videoname = args.shift()
-                let video = videos.find(m => m.name == videoname);
+                {
+                    if (streamStatus.joined) {
+                        message.reply('** Already joined **');
+                        return;
+                    }
+                    // Get video name and find video file
+                    const videoname = args.shift()
+                    const video = videos.find(m => m.name == videoname);
 
-                if (!video) {
-                    message.reply('** Video not found **');
-                    return;
-                }
+                    if (!video) {
+                        message.reply('** Video not found **');
+                        return;
+                    }
 
-                // Check if the respect video parameters environment variable is enabled
-                if (config.respect_video_params) {
-                    // Checking video params
+                    // Check if the respect video parameters environment variable is enabled
+                    if (config.respect_video_params) {
+                        // Checking video params
+                        try {
+                            const resolution = await getVideoParams(video.path);
+                            streamOpts.height = resolution.height;
+                            streamOpts.width = resolution.width;
+                            if (resolution.bitrate != "N/A") {
+                                streamOpts.bitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
+                            }
+
+                            if (resolution.maxbitrate != "N/A") {
+                                streamOpts.maxBitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
+                            }
+
+                            if (resolution.fps) {
+                                streamOpts.fps = resolution.fps
+                            }
+
+                        } catch (error) {
+                            console.error('Unable to determine resolution, using static resolution....', error);
+                        }
+                    }
+
+                    await streamer.joinVoice(guildId, channelId, streamOpts);
+                    streamStatus.joined = true;
+                    streamStatus.playing = true;
+                    streamStatus.channelInfo = {
+                        guildId: guildId,
+                        channelId: channelId,
+                        cmdChannelId: message.channel.id
+                    }
+                    const streamUdpConn = await streamer.createStream(streamOpts);
+                    playVideo(video.path, streamUdpConn);
+                    message.reply('** Playing ( `' + videoname + '` )... **');
+                    console.log('Playing ( ' + videoname + ' )...');
+                    streamer.client.user?.setActivity(status_watch(videoname) as unknown as ActivityOptions)
+                }
+                break;
+            case 'playlink':
+                {
+                    if (streamStatus.joined) {
+                        message.reply('**Already joined**');
+                        return;
+                    }
+
+                    const link = args.shift() || '';
+
+                    if (!link) {
+                        message.reply('**Please provide a direct link/Youtube Link.**')
+                        return;
+                    }
+
+                    await streamer.joinVoice(guildId, channelId, streamOpts);
+
+                    streamStatus.joined = true;
+                    streamStatus.playing = true;
+                    streamStatus.channelInfo = {
+                        guildId: guildId,
+                        channelId: channelId,
+                        cmdChannelId: message.channel.id
+                    }
+
+                    const streamLinkUdpConn = await streamer.createStream(streamOpts);
+
+                    switch (true) {
+                        case ytdl.validateURL(link):
+                            {
+                                const yturl = await getVideoUrl(link).catch(error => {
+                                    console.error("Error:", error);
+                                });
+                                if (yturl) {
+                                    message.reply('**Playing...**');
+                                    playVideo(yturl, streamLinkUdpConn);
+                                    streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
+                                }
+                            }
+                            break;
+                        default:
+                            {
+                                playVideo(link, streamLinkUdpConn);
+                                message.reply('**Playing...**');
+                                streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
+                            }
+                    }
+                }
+                break;
+            case 'ytplay':
+                {
+                    if (streamStatus.joined) {
+                        message.reply('**Already joined**');
+                        return;
+                    }
+
+                    const title = args.length > 1 ? args.slice(1).join(' ') : args[1] || args.shift() || '';
+
+                    if (!title) {
+                        message.reply('**Please provide a Youtube title!**')
+                        return;
+                    }
+
+                    await streamer.joinVoice(guildId, channelId, streamOpts);
+
+                    streamStatus.joined = true;
+                    streamStatus.playing = true;
+                    streamStatus.channelInfo = {
+                        guildId: guildId,
+                        channelId: channelId,
+                        cmdChannelId: message.channel.id
+                    }
+
+                    const streamYoutubeTitleUdpConn = await streamer.createStream(streamOpts);
+                    const ytUrlFromTitle = await ytPlayTitle(title);
+                    if (ytUrlFromTitle) {
+                        message.reply('**Playing...**');
+                        playVideo(ytUrlFromTitle, streamYoutubeTitleUdpConn);
+                        streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
+                    }
+                }
+                break;
+            case 'ytsearch':
+                {
+                    const query = args.length > 1 ? args.slice(1).join(' ') : args[1] || args.shift() || '';
+
+                    if (!query) {
+                        message.reply('**Please provide a Youtube title!**')
+                        return;
+                    }
+
+                    const ytSearchQuery = await ytSearch(query);
                     try {
-                        const resolution = await getVideoParams(video.path);
-                        streamOpts.height = resolution.height;
-                        streamOpts.width = resolution.width;
-                        if (resolution.bitrate != "N/A") {
-                            streamOpts.bitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
-                        }
-
-                        if (resolution.maxbitrate != "N/A") {
-                            streamOpts.maxBitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
-                        }
-
-                        if (resolution.fps) {
-                            streamOpts.fps = resolution.fps
+                        if (ytSearchQuery) {
+                            message.reply(ytSearchQuery.join('\n'));
                         }
 
                     } catch (error) {
-                        console.error('Unable to determine resolution, using static resolution....', error);
+                        message.reply("Error");
                     }
                 }
-
-                await streamer.joinVoice(guildId, channelId, streamOpts);
-                streamStatus.joined = true;
-                streamStatus.playing = true;
-                streamStatus.channelInfo = {
-                    guildId: guildId,
-                    channelId: channelId,
-                    cmdChannelId: message.channel.id
-                }
-                const streamUdpConn = await streamer.createStream(streamOpts);
-                playVideo(video.path, streamUdpConn);
-                message.reply('** Playing ( `' + videoname + '` )... **');
-                console.log('Playing ( ' + videoname + ' )...');
-                streamer.client.user?.setActivity(status_watch(videoname) as unknown as ActivityOptions)
-                break;
-            case 'playlink':
-                if (streamStatus.joined) {
-                    message.reply('**Already joined**');
-                    return;
-                }
-
-                let link = args.shift() || '';
-
-                if (!link) {
-                    message.reply('**Please provide a direct link/Youtube Link.**')
-                    return;
-                }
-
-                await streamer.joinVoice(guildId, channelId, streamOpts);
-
-                streamStatus.joined = true;
-                streamStatus.playing = true;
-                streamStatus.channelInfo = {
-                    guildId: guildId,
-                    channelId: channelId,
-                    cmdChannelId: message.channel.id
-                }
-
-                const streamLinkUdpConn = await streamer.createStream(streamOpts);
-
-                switch (true) {
-                    case ytdl.validateURL(link):
-                        const yturl = await getVideoUrl(link).catch(error => {
-                            console.error("Error:", error);
-                        });
-                        if (yturl) {
-                            message.reply('**Playing...**');
-                            playVideo(yturl, streamLinkUdpConn);
-                            streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
-                        }
-                        break;
-                    default:
-                        playVideo(link, streamLinkUdpConn);
-                        message.reply('**Playing...**');
-                        streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
-                }
-
-                break;
-            case 'ytplay':
-                if (streamStatus.joined) {
-                    message.reply('**Already joined**');
-                    return;
-                }
-
-                let title = args.length > 1 ? args.slice(1).join(' ') : args[1] || args.shift() || '';
-
-                if (!title) {
-                    message.reply('**Please provide a Youtube title!**')
-                    return;
-                }
-
-                await streamer.joinVoice(guildId, channelId, streamOpts);
-
-                streamStatus.joined = true;
-                streamStatus.playing = true;
-                streamStatus.channelInfo = {
-                    guildId: guildId,
-                    channelId: channelId,
-                    cmdChannelId: message.channel.id
-                }
-
-                const streamYoutubeTitleUdpConn = await streamer.createStream(streamOpts);
-                const ytUrlFromTitle = await ytPlayTitle(title);
-                if (ytUrlFromTitle) {
-                    message.reply('**Playing...**');
-                    playVideo(ytUrlFromTitle, streamYoutubeTitleUdpConn);
-                    streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
-                }
-
-                break;
-            case 'ytsearch':
-                let query = args.length > 1 ? args.slice(1).join(' ') : args[1] || args.shift() || '';
-
-                if (!query) {
-                    message.reply('**Please provide a Youtube title!**')
-                    return;
-                }
-
-                const ytSearchQuery = await ytSearch(query);
-                try {
-                    if (ytSearchQuery) {
-                        message.reply(ytSearchQuery.join('\n'));
-                    }
-
-                } catch (error) {
-                    message.reply("Error");
-                }
-
                 break;
             case 'stop':
-                if (!streamStatus.joined) {
-                    message.reply('**Already Stopped!**');
-                    return;
+                {
+                    if (!streamStatus.joined) {
+                        message.reply('**Already Stopped!**');
+                        return;
+                    }
+                    streamer.leaveVoice()
+                    streamStatus.joined = false;
+                    streamStatus.joinsucc = false;
+                    streamStatus.playing = false;
+                    streamStatus.channelInfo = {
+                        guildId: '',
+                        channelId: '',
+                        cmdChannelId: streamStatus.channelInfo.cmdChannelId
+                    }
+                    command?.cancel()
+                    console.log("Stopped playing")
+                    message.reply('**Stopped playing.**');
                 }
-                streamer.leaveVoice()
-                streamStatus.joined = false;
-                streamStatus.joinsucc = false;
-                streamStatus.playing = false;
-                streamStatus.channelInfo = {
-                    guildId: '',
-                    channelId: '',
-                    cmdChannelId: streamStatus.channelInfo.cmdChannelId
-                }
-                command?.cancel()
-                console.log("Stopped playing")
-                message.reply('**Stopped playing.**');
                 break;
             // Disabled pause and resume commands until I find a better implementation
             // case 'pause':
@@ -330,124 +345,136 @@ streamer.client.on('messageCreate', async (message) => {
             //     }
             //     break;
             case 'list':
-                message.reply(`Available videos:\n${videos.map(m => m.name).join('\n')}`);
+                {
+                    message.reply(`Available videos:\n${videos.map(m => m.name).join('\n')}`);
+                }
                 break;
             case 'status':
-                message.reply(`Joined: ${streamStatus.joined}\nPlaying: ${streamStatus.playing}`);
+                {
+                    message.reply(`Joined: ${streamStatus.joined}\nPlaying: ${streamStatus.playing}`);
+                }
                 break;
             case 'refresh':
-                // refresh video list
-                const videoFiles = fs.readdirSync(config.videosDir);
-                videos = videoFiles.map(file => {
-                    const fileName = path.parse(file).name;
-                    // replace space with _
-                    return { name: fileName.replace(/ /g, '_'), path: path.join(config.videosDir, file) };
-                });
-                message.reply('video list refreshed ' + videos.length + ' videos found.\n' + videos.map(m => m.name).join('\n'));
+                {
+                    // refresh video list
+                    const videoFiles = fs.readdirSync(config.videosDir);
+                    videos = videoFiles.map(file => {
+                        const fileName = path.parse(file).name;
+                        // replace space with _
+                        return { name: fileName.replace(/ /g, '_'), path: path.join(config.videosDir, file) };
+                    });
+                    message.reply('video list refreshed ' + videos.length + ' videos found.\n' + videos.map(m => m.name).join('\n'));
+                }
                 break;
             case 'preview':
-                let vid = args.shift();
-                let vid_name = videos.find(m => m.name === vid);
+                {
+                    const vid = args.shift();
+                    const vid_name = videos.find(m => m.name === vid);
 
-                if (!vid_name) {
-                    message.reply('** Video not found **');
-                    return;
-                }
-
-                try {
-                    const hasUnderscore = vid_name.name.includes('_');
-                    //                                                Replace _ with space
-                    const thumbnails = await ffmpegScreenshot(`${hasUnderscore ? vid_name.name : vid_name.name.replace(/_/g, ' ')}${path.extname(vid_name.path)}`);
-                    if (thumbnails.length > 0) {
-                        const attachments: MessageAttachment[] = [];
-                        for (const screenshotPath of thumbnails) {
-                            attachments.push(new MessageAttachment(screenshotPath));
-                        }
-                        await message.reply({ files: attachments });
-                    } else {
-                        message.reply('Failed to generate preview thumbnails.');
+                    if (!vid_name) {
+                        message.reply('** Video not found **');
+                        return;
                     }
-                } catch (error) {
-                    console.error('Error generating preview thumbnails:', error);
+
+                    try {
+                        const hasUnderscore = vid_name.name.includes('_');
+                        //                                                Replace _ with space
+                        const thumbnails = await ffmpegScreenshot(`${hasUnderscore ? vid_name.name : vid_name.name.replace(/_/g, ' ')}${path.extname(vid_name.path)}`);
+                        if (thumbnails.length > 0) {
+                            const attachments: MessageAttachment[] = [];
+                            for (const screenshotPath of thumbnails) {
+                                attachments.push(new MessageAttachment(screenshotPath));
+                            }
+                            await message.reply({ files: attachments });
+                        } else {
+                            message.reply('Failed to generate preview thumbnails.');
+                        }
+                    } catch (error) {
+                        console.error('Error generating preview thumbnails:', error);
+                    }
                 }
                 break;
             case 'help':
-                const commands = {
-                    play: {
-                        description: 'Play a video',
-                        usage: 'play [video name]',
-                    },
+                {
+                    const commands = {
+                        play: {
+                            description: 'Play a video',
+                            usage: 'play [video name]',
+                        },
 
-                    playlink: {
-                        description: 'Play a video/video/stream direct link or from youtube link',
-                        usage: 'playlink [link]',
-                    },
+                        playlink: {
+                            description: 'Play a video/video/stream direct link or from youtube link',
+                            usage: 'playlink [link]',
+                        },
 
-                    ytplay: {
-                        description: 'Play a YouTube video from a title query',
-                        usage: 'ytplay [query]',
-                    },
+                        ytplay: {
+                            description: 'Play a YouTube video from a title query',
+                            usage: 'ytplay [query]',
+                        },
 
-                    ytsearch: {
-                        description: 'Search for a YouTube video using a title query',
-                        usage: 'ytsearch [query]',
-                    },
+                        ytsearch: {
+                            description: 'Search for a YouTube video using a title query',
+                            usage: 'ytsearch [query]',
+                        },
 
-                    stop: {
-                        description: 'Stop the current playing video',
-                        usage: 'stop'
-                    },
+                        stop: {
+                            description: 'Stop the current playing video',
+                            usage: 'stop'
+                        },
 
-                    pause: {
-                        description: 'Pause the currently playing video',
-                        usage: 'pause'
-                    },
+                        pause: {
+                            description: 'Pause the currently playing video',
+                            usage: 'pause'
+                        },
 
-                    resume: {
-                        description: 'Resume the paused video',
-                        usage: 'resume'
-                    },
+                        resume: {
+                            description: 'Resume the paused video',
+                            usage: 'resume'
+                        },
 
-                    list: {
-                        description: 'Get available video list',
-                        usage: 'list'
-                    },
+                        list: {
+                            description: 'Get available video list',
+                            usage: 'list'
+                        },
 
-                    refresh: {
-                        description: 'Refresh video list.',
-                        usage: 'refresh'
-                    },
+                        refresh: {
+                            description: 'Refresh video list.',
+                            usage: 'refresh'
+                        },
 
-                    status: {
-                        description: 'Get bot status.',
-                        usage: 'status'
-                    },
+                        status: {
+                            description: 'Get bot status.',
+                            usage: 'status'
+                        },
 
-                    preview: {
-                        description: 'Generate and obtain preview thumbnails of a specific video.',
-                        usage: 'preview [video name]'
-                    },
+                        preview: {
+                            description: 'Generate and obtain preview thumbnails of a specific video.',
+                            usage: 'preview [video name]'
+                        },
 
-                    help: {
-                        description: 'Show this help message',
-                        usage: 'help'
+                        help: {
+                            description: 'Show this help message',
+                            usage: 'help'
+                        }
                     }
+
+
+                    let help = 'Available commands:\n\n';
+
+                    for (const [name, cmd] of Object.entries(commands)) {
+                        help += `**${name}: ${cmd.description}**\n`;
+                        help += `Usage: \`${config.prefix}${cmd.usage}\`\n`;
+
+                    }
+
+                    // Reply with all commands
+                    message.reply(help);
                 }
-
-
-                let help = 'Available commands:\n\n';
-
-                for (const [name, cmd] of Object.entries(commands)) {
-                    help += `**${name}: ${cmd.description}**\n`;
-                    help += `Usage: \`${config.prefix}${cmd.usage}\`\n`;
-
-                }
-
-                // Reply with all commands
-                message.reply(help);
                 break;
             default:
-                message.reply('**Invalid command**');
+                {
+                    message.reply('**Invalid command**');
+                }
         }
     }
 });
@@ -579,7 +606,7 @@ async function getVideoUrl(videoUrl: string): Promise<string | null> {
             } else {
                 const videoFormats = video.formats
                     .filter((format: {
-                        hasVideo: any; hasAudio: any;
+                        hasVideo: boolean; hasAudio: boolean;
                     }) => format.hasVideo && format.hasAudio);
 
                 return videoFormats[0].url ? videoFormats[0].url : null;
@@ -611,7 +638,7 @@ async function ytPlayTitle(title: string): Promise<string | null> {
                 } else {
                     const videoFormats = ytVideoInfo.formats
                         .filter((format: {
-                            hasVideo: any; hasAudio: any;
+                            hasVideo: boolean; hasAudio: boolean;
                         }) => format.hasVideo && format.hasAudio);
 
                     return videoFormats[0].url ? videoFormats[0].url : null;
