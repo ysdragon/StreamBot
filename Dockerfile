@@ -4,11 +4,11 @@ FROM node:22.11-bookworm-slim
 # Set the working directory
 WORKDIR /home/bots/StreamBot
 
-# Install important deps
-RUN apt-get update && apt-get install -y -qq build-essential ffmpeg python3
-
-# Clean cache
-RUN apt clean --dry-run
+# Install important deps and clean cache
+RUN apt-get update && \
+    apt-get install -y -qq build-essential ffmpeg python3 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install pnpm
 RUN npm install pnpm -g

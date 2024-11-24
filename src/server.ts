@@ -2,7 +2,7 @@ import config from "./config.js";
 import express from "express";
 import session from "express-session";
 import bcrypt from "bcrypt";
-import multer from "multer";
+import multer, { StorageEngine } from 'multer';
 import path from "path";
 import fs from "fs";
 import axios from "axios";
@@ -36,19 +36,27 @@ if (!fs.existsSync(config.previewCacheDir)) {
   fs.mkdirSync(config.previewCacheDir);
 }
 
-const storage = multer.diskStorage({
-  destination: (req: any, file: any, cb: (arg0: null, arg1: string) => void) => {
+// Define the type for the file object
+interface MulterFile extends Express.Multer.File {
+  originalname: string;
+}
+
+// Configure multer storage
+const storage: StorageEngine = multer.diskStorage({
+  destination: (req: express.Request, file: MulterFile, cb: (error: Error | null, destination: string) => void) => {
     cb(null, config.videosDir);
   },
-  filename: (req: any, file: { originalname: any; }, cb: (arg0: null, arg1: any) => void) => {
+  filename: (req: express.Request, file: MulterFile, cb: (error: Error | null, filename: string) => void) => {
     cb(null, file.originalname);
   },
 });
 
-const upload = multer({ storage: storage });
+// Create the multer upload instance
+const upload = multer({ storage });
 
+// Define the authentication middleware
 const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if ((req.session as any).user) {
+  if ((req.session as { user?: unknown }).user) {
     next();
   } else {
     res.redirect("/login");
@@ -344,7 +352,7 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
   if (username === config.server_username && bcrypt.compareSync(password, config.server_password)) {
-    (req.session as any).user = username;
+    (req.session as { user?: unknown }).user = username;
     res.redirect("/");
   } else {
     res.redirect("/login?error=1");
