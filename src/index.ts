@@ -1,13 +1,20 @@
 import { Client, TextChannel, CustomStatus, ActivityOptions, MessageAttachment } from "discord.js-selfbot-v13";
 import { streamLivestreamVideo, MediaUdp, StreamOptions, Streamer, Utils } from "@dank074/discord-video-stream";
-import config from "./config.js"
+import config from "./config.js";
 import fs from 'fs';
 import path from 'path';
 import ytdl from '@distube/ytdl-core';
+import { getStream } from 'twitch-m3u8';
 import yts from 'play-dl';
 import ffmpeg from 'fluent-ffmpeg';
 import { getVideoParams, ffmpegScreenshot } from "./utils/ffmpeg.js";
-import PCancelable from "p-cancelable";
+import PCancelable, {CancelError} from "p-cancelable";
+
+interface TwitchStream {
+    quality: string;
+    resolution: string;
+    url: string;
+}
 
 const streamer = new Streamer(new Client());
 let command: PCancelable<string> | undefined;
@@ -32,7 +39,7 @@ const streamOpts: StreamOptions = {
      * Encoding preset for H264 or H265. The faster it is, the lower the quality
      * Available presets: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow
      */
-    h26xPreset: 'ultrafast',
+    h26xPreset: config.h26xPreset,
     /**
      * Adds ffmpeg params to minimize latency and start outputting video as fast as possible.
      *  Might create lag in video output in some rare cases
@@ -243,6 +250,17 @@ streamer.client.on('messageCreate', async (message) => {
                                 }
                             }
                             break;
+                        case link.includes('twitch.tv'):
+                            {
+                                const twitchId = link.split('/').pop() as string;
+                                const twitchUrl = await getTwitchStreamUrl(twitchId);
+                                if (twitchUrl) {
+                                    message.reply('**Playing...**');
+                                    playVideo(twitchUrl, streamLinkUdpConn);
+                                    streamer.client.user?.setActivity(status_watch(`twitch.tv/${twitchId}`) as unknown as ActivityOptions);
+                                }
+                            }
+                            break;
                         default:
                             {
                                 playVideo(link, streamLinkUdpConn);
@@ -322,7 +340,7 @@ streamer.client.on('messageCreate', async (message) => {
                     }
 
                     command?.cancel()
-
+                    
                     console.log("Stopped playing")
                     message.reply('**Stopped playing.**');
                 }
@@ -489,7 +507,7 @@ async function playVideo(video: string, udpConn: MediaUdp) {
     udpConn.mediaConnection.setVideoStatus(true);
 
     try {
-        const command = streamLivestreamVideo(video, udpConn);
+        command = streamLivestreamVideo(video, udpConn);
         
         const res = await command;
         console.log("Finished playing video " + res);
@@ -505,7 +523,9 @@ async function playVideo(video: string, udpConn: MediaUdp) {
             });
         }
     } catch (error) {
-        console.log("Error playing video: ", error);
+        if ( !(error instanceof CancelError) ) {
+            console.error("Error occurred while playing video:", error);
+        } 
     } finally {
         udpConn.mediaConnection.setSpeaking(false);
         udpConn.mediaConnection.setVideoStatus(false);
@@ -585,6 +605,18 @@ async function ytVideoCache(ytVideo: any): Promise<string | null> {
     }
 
     return null;
+}
+
+async function getTwitchStreamUrl(url: string): Promise<string | null> {
+    try {
+        const streams = await getStream(url);
+        const stream = streams.find((stream: TwitchStream) => stream.resolution === `${config.width}x${config.height}`) || streams[0];
+        return stream.url;
+        // match best resolution with configured resolution
+    } catch (error) {
+        console.error("Error occurred while getting Twitch stream URL:", error);
+        return null;
+    }
 }
 
 async function getVideoUrl(videoUrl: string): Promise<string | null> {
