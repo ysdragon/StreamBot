@@ -104,6 +104,15 @@ STREAM_MAX_BITRATE_KBPS = "2500" # The maximum bitrate of the video stream in ki
 STREAM_HARDWARE_ACCELERATION = "false" # Whether to use hardware acceleration for video decoding, set to "true" to enable, "false" to disable
 STREAM_VIDEO_CODEC = "H264" # The video codec to use for the stream, can be "H264" or "H265" or "VP8"
 
+# STREAM_H26X_PRESET: Determines the encoding preset for H26x video streams. 
+# If the STREAM_H26X_PRESET environment variable is set, it parses the value 
+# using the parsePreset function. If not set, it defaults to 'ultrafast' for 
+# optimal encoding speed. This preset is only applicable when the codec is 
+# H26x; otherwise, it should be disabled or ignored.
+# Available presets: "ultrafast", "superfast", "veryfast", "faster", 
+# "fast", "medium", "slow", "slower", "veryslow".
+STREAM_H26X_PRESET = "ultrafast"
+
 # Videos server options
 SERVER_ENABLED = "false" # Whether to enable the built-in video server
 SERVER_USERNAME = "admin" # The username for the video server's admin interface
