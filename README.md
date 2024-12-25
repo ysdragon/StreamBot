@@ -7,7 +7,7 @@ This is a Discord selfbot that allows streaming videos, and streams from YouTube
 - Stream videos from a local folder.
 - Stream and search for YouTube videos using titles.
 - Stream YouTube videos/live streams by link.
-- Stream arbitrary links (video files, live streams, etc.).
+- Stream arbitrary links (video files, live streams, twitch live streams, etc.).
 - Playback commands: play, playlink, ytplay, pause, resume, stop.
 - List available videos.
 - Refresh the video list.
