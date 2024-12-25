@@ -8,7 +8,7 @@ import { getStream } from 'twitch-m3u8';
 import yts from 'play-dl';
 import ffmpeg from 'fluent-ffmpeg';
 import { getVideoParams, ffmpegScreenshot } from "./utils/ffmpeg.js";
-import PCancelable from "p-cancelable";
+import PCancelable, {CancelError} from "p-cancelable";
 
 interface TwitchStream {
     quality: string;
@@ -39,7 +39,7 @@ const streamOpts: StreamOptions = {
      * Encoding preset for H264 or H265. The faster it is, the lower the quality
      * Available presets: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow
      */
-    h26xPreset: 'faster',
+    h26xPreset: config.h26xPreset,
     /**
      * Adds ffmpeg params to minimize latency and start outputting video as fast as possible.
      *  Might create lag in video output in some rare cases
@@ -340,7 +340,7 @@ streamer.client.on('messageCreate', async (message) => {
                     }
 
                     command?.cancel()
-
+                    
                     console.log("Stopped playing")
                     message.reply('**Stopped playing.**');
                 }
@@ -507,7 +507,7 @@ async function playVideo(video: string, udpConn: MediaUdp) {
     udpConn.mediaConnection.setVideoStatus(true);
 
     try {
-        const command = streamLivestreamVideo(video, udpConn);
+        command = streamLivestreamVideo(video, udpConn);
         
         const res = await command;
         console.log("Finished playing video " + res);
@@ -523,7 +523,9 @@ async function playVideo(video: string, udpConn: MediaUdp) {
             });
         }
     } catch (error) {
-        console.log("Error playing video: ", error);
+        if ( !(error instanceof CancelError) ) {
+            console.error("Error occurred while playing video:", error);
+        } 
     } finally {
         udpConn.mediaConnection.setSpeaking(false);
         udpConn.mediaConnection.setVideoStatus(false);
