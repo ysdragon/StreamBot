@@ -1,9 +1,10 @@
-# Use the official nodejs 22 debian bookworm slim as the base image
+# Use ubuntu 22.04 as the base image
 FROM ubuntu:22.04
 
 # Set the working directory
 WORKDIR /streambot
 
+# Install curl to fetch nodejs repository
 RUN apt-get update && apt-get install -y curl
 
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
