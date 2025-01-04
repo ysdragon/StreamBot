@@ -14,7 +14,7 @@ This is a Discord selfbot that allows streaming videos, and streams from YouTube
 - Get playback status.
 
 ## Requirements
-[Node.js](https://nodejs.org/) _(version 21 or later)_  
+[Bun](https://bun.sh/) _(version 1.1.39 or later)_
 [FFmpeg](https://www.ffmpeg.org/) _(must be added to path or installed to working directory)_
 
 ## Installation Steps:
@@ -26,22 +26,23 @@ This project is [hosted on github](https://github.com/ysdragon/StreamBot).
 git clone https://github.com/ysdragon/StreamBot
 ```
 
-2. Use [bun](https://bun.sh) or any other package manager to install all the dependencies:
+2. Use [bun](https://bun.sh) or another npm package manager to install all the dependencies:
 ```
 bun install 
 ```
 
-3. Build the artifacts from source:
-```
-bun run build
-```
-
-4. Rename [.env.example](https://github.com/ysdragon/StreamBot/blob/main/.env.example) to .env
+3. Rename [.env.example](https://github.com/ysdragon/StreamBot/blob/main/.env.example) to .env
 
 ## Usage
 Start the built artifacts:
 ```
 bun run start
+```
+
+If you want to use Node.js, you can use the following command:
+```
+bun run build
+bun run start:node
 ```
 
 ## Start with Docker Compose
