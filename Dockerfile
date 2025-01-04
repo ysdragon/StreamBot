@@ -5,7 +5,9 @@ FROM ubuntu:24.04
 WORKDIR /home/bots/StreamBot
 
 # Install minimal dependencies
-RUN apt-get update && apt-get install -y curl ca-certificates unzip
+RUN apt-get update && apt-get install -y curl ca-certificates unzip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install bun and add to PATH
 ENV BUN_INSTALL="/usr/local/"
