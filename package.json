@@ -5,8 +5,10 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "start": "node ./dist/index.js",
-    "server": "node ./dist/server.js",
+    "start": "bun src/index.ts",
+    "start:node": "node dist/index.js",
+    "server": "bun src/server.ts",
+    "server:node": "node dist/server.js",
     "build": "tsc",
     "watch": "tsc -w"
   },
