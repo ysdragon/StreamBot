@@ -40,16 +40,7 @@ const streamOpts: StreamOptions = {
      * Encoding preset for H264 or H265. The faster it is, the lower the quality
      * Available presets: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow
      */
-    h26xPreset: config.h26xPreset,
-    /**
-     * Adds ffmpeg params to minimize latency and start outputting video as fast as possible.
-     *  Might create lag in video output in some rare cases
-     */
-    minimizeLatency: false,
-    /**
-     * ChaCha20-Poly1305 Encryption is faster than AES-256-GCM, except when using AES-NI
-     */
-    forceChacha20Encryption: true
+    h26xPreset: config.h26xPreset
 };
 
 // Create the videosFolder dir if it doesn't exist
