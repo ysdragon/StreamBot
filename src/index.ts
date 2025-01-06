@@ -27,6 +27,7 @@ const streamOpts: StreamOptions = {
     maxBitrateKbps: config.maxBitrateKbps,
     hardwareAcceleratedDecoding: config.hardwareAcceleratedDecoding,
     videoCodec: Utils.normalizeVideoCodec(config.videoCodec),
+    readAtNativeFps: false,
 
     /**
      * Advanced options
@@ -507,7 +508,7 @@ async function playVideo(video: string, udpConn: MediaUdp) {
     udpConn.mediaConnection.setVideoStatus(true);
 
     try {
-        command = streamLivestreamVideo(video, udpConn);
+        command = PCancelable.fn<string, string>((input, onCancel) => streamLivestreamVideo(video, udpConn))(video);
         
         const res = await command;
         console.log("Finished playing video " + res);
