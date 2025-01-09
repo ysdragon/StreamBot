@@ -1,4 +1,4 @@
-import { Client, TextChannel, CustomStatus, ActivityOptions, Message, MessageAttachment } from "discord.js-selfbot-v13";
+import { Client, TextChannel, CustomStatus, Message, MessageAttachment, ActivityOptions } from "discord.js-selfbot-v13";
 import { streamLivestreamVideo, MediaUdp, StreamOptions, Streamer, Utils } from "@dank074/discord-video-stream";
 import config from "./config.js";
 import fs from 'fs';
@@ -8,7 +8,7 @@ import { getStream } from 'twitch-m3u8';
 import yts from 'play-dl';
 import ffmpeg from 'fluent-ffmpeg';
 import { getVideoParams, ffmpegScreenshot } from "./utils/ffmpeg.js";
-import PCancelable, {CancelError} from "p-cancelable";
+import PCancelable, { CancelError } from "p-cancelable";
 
 // YouTube video interface
 interface YouTubeVideo {
@@ -57,10 +57,10 @@ const streamOpts: StreamOptions = {
     rtcpSenderReportEnabled: true,
 
     /**
-    * Ffmpeg will read frames at native framerate.
-    * Disabling this make ffmpeg read frames as fast as possible and setTimeout will be used to control output fps instead. 
-    * Enabling this can result in certain streams having video/audio out of sync
-     */ 
+     * Ffmpeg will read frames at native framerate.
+     * Disabling this make ffmpeg read frames as fast as possible and setTimeout will be used to control output fps instead. 
+     * Enabling this can result in certain streams having video/audio out of sync
+     */
     readAtNativeFps: false,
 
     /**
@@ -102,23 +102,11 @@ let videos = videoFiles.map(file => {
 // print out all videos
 console.log(`Available videos:\n${videos.map(m => m.name).join('\n')}`);
 
-const status_idle = () => {
-    return new CustomStatus(new Client())
-        .setEmoji('📽')
-        .setState('Watching Something!')
-}
-
-const status_watch = (name) => {
-    return new CustomStatus(new Client())
-        .setEmoji('📽')
-        .setState(`Playing ${name}...`)
-}
-
-// ready event
-streamer.client.on("ready", () => {
+// Ready event
+streamer.client.on("ready", async () => {
     if (streamer.client.user) {
         console.log(`--- ${streamer.client.user.tag} is ready ---`);
-        streamer.client.user.setActivity(status_idle() as unknown as ActivityOptions)
+        streamer.client.user?.setActivity(status_idle() as ActivityOptions);
     }
 });
 
@@ -133,7 +121,7 @@ const streamStatus = {
     }
 }
 
-streamer.client.on('voiceStateUpdate', (oldState, newState) => {
+streamer.client.on('voiceStateUpdate', async (oldState, newState) => {
     // When exit channel
     if (oldState.member?.user.id == streamer.client.user?.id) {
         if (oldState.channelId && !newState.channelId) {
@@ -145,9 +133,10 @@ streamer.client.on('voiceStateUpdate', (oldState, newState) => {
                 channelId: config.videoChannelId,
                 cmdChannelId: config.cmdChannelId
             }
-            streamer.client.user?.setActivity(status_idle() as unknown as ActivityOptions)
+            streamer.client.user?.setActivity(status_idle() as ActivityOptions);
         }
     }
+
     // When join channel success
     if (newState.member?.user.id == streamer.client.user?.id) {
         if (newState.channelId && !oldState.channelId) {
@@ -161,9 +150,9 @@ streamer.client.on('voiceStateUpdate', (oldState, newState) => {
 
 streamer.client.on('messageCreate', async (message) => {
     if (
-        message.author.bot || 
-        message.author.id === streamer.client.user?.id || 
-        !config.cmdChannelId.includes(message.channel.id.toString()) || 
+        message.author.bot ||
+        message.author.id === streamer.client.user?.id ||
+        !config.cmdChannelId.includes(message.channel.id.toString()) ||
         !message.content.startsWith(config.prefix!)
     ) return; // Ignore bots, self, non-command channels, and non-commands
 
@@ -179,7 +168,7 @@ streamer.client.on('messageCreate', async (message) => {
             case 'play':
                 {
                     if (streamStatus.joined) {
-                        message.reply('** Already joined **');
+                        sendError(message, 'Already joined');
                         return;
                     }
                     // Get video name and find video file
@@ -187,7 +176,7 @@ streamer.client.on('messageCreate', async (message) => {
                     const video = videos.find(m => m.name == videoname);
 
                     if (!video) {
-                        message.reply('** Video not found **');
+                        await sendError(message, 'Video not found');
                         return;
                     }
 
@@ -215,7 +204,12 @@ streamer.client.on('messageCreate', async (message) => {
                         }
                     }
 
-                    await streamer.joinVoice(guildId, channelId, streamOpts);
+                    // Join voice channel
+                    await streamer.joinVoice(guildId, channelId, streamOpts)
+
+                    // Create stream
+                    const streamUdpConn = await streamer.createStream(streamOpts);
+
                     streamStatus.joined = true;
                     streamStatus.playing = true;
                     streamStatus.channelInfo = {
@@ -223,28 +217,36 @@ streamer.client.on('messageCreate', async (message) => {
                         channelId: channelId,
                         cmdChannelId: message.channel.id
                     }
-                    const streamUdpConn = await streamer.createStream(streamOpts);
-                    playVideo(video.path, streamUdpConn);
-                    message.reply('** Playing ( `' + videoname + '` )... **');
-                    console.log('Playing ( ' + videoname + ' )...');
-                    streamer.client.user?.setActivity(status_watch(videoname) as unknown as ActivityOptions)
+
+                    // Log playing video
+                    console.log('Playing a local video: %s', video.path);
+
+                    // Send playing message
+                    sendPlaying(message, videoname || "Local Video");
+
+                    // Play video
+                    playVideo(video.path, streamUdpConn, videoname);
                 }
                 break;
             case 'playlink':
                 {
                     if (streamStatus.joined) {
-                        message.reply('**Already joined**');
+                        sendError(message, 'Already joined');
                         return;
                     }
 
                     const link = args.shift() || '';
 
                     if (!link) {
-                        message.reply('**Please provide a direct link/Youtube Link.**')
+                        await sendError(message, 'Please provide a link.');
                         return;
                     }
 
+                    // Join voice channel
                     await streamer.joinVoice(guildId, channelId, streamOpts);
+
+                    // Create stream
+                    const streamLinkUdpConn = await streamer.createStream(streamOpts);
 
                     streamStatus.joined = true;
                     streamStatus.playing = true;
@@ -254,18 +256,20 @@ streamer.client.on('messageCreate', async (message) => {
                         cmdChannelId: message.channel.id
                     }
 
-                    const streamLinkUdpConn = await streamer.createStream(streamOpts);
-
                     switch (true) {
                         case ytdl.validateURL(link):
                             {
-                                const yturl = await getVideoUrl(link).catch(error => {
-                                    console.error("Error:", error);
-                                });
+                                const [videoInfo, yturl] = await Promise.all([
+                                    ytdl.getInfo(link),
+                                    getVideoUrl(link).catch(error => {
+                                        console.error("Error:", error);
+                                        return null;
+                                    })
+                                ]);
+
                                 if (yturl) {
-                                    message.reply('**Playing...**');
-                                    playVideo(yturl, streamLinkUdpConn);
-                                    streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
+                                    sendPlaying(message, videoInfo.videoDetails.title);
+                                    playVideo(yturl, streamLinkUdpConn, videoInfo.videoDetails.title);
                                 }
                             }
                             break;
@@ -274,17 +278,15 @@ streamer.client.on('messageCreate', async (message) => {
                                 const twitchId = link.split('/').pop() as string;
                                 const twitchUrl = await getTwitchStreamUrl(twitchId);
                                 if (twitchUrl) {
-                                    message.reply('**Playing...**');
-                                    playVideo(twitchUrl, streamLinkUdpConn);
-                                    streamer.client.user?.setActivity(status_watch(`twitch.tv/${twitchId}`) as unknown as ActivityOptions);
+                                    sendPlaying(message, `${twitchId}'s Twitch Stream`);
+                                    playVideo(twitchUrl, streamLinkUdpConn, `twitch.tv/${twitchId}`);
                                 }
                             }
                             break;
                         default:
                             {
-                                playVideo(link, streamLinkUdpConn);
-                                message.reply('**Playing...**');
-                                streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
+                                sendPlaying(message, "URL");
+                                playVideo(link, streamLinkUdpConn, "URL");
                             }
                     }
                 }
@@ -292,18 +294,27 @@ streamer.client.on('messageCreate', async (message) => {
             case 'ytplay':
                 {
                     if (streamStatus.joined) {
-                        message.reply('**Already joined**');
+                        sendError(message, 'Already joined');
                         return;
                     }
 
                     const title = args.length > 1 ? args.slice(1).join(' ') : args[1] || args.shift() || '';
 
                     if (!title) {
-                        message.reply('**Please provide a Youtube title!**')
+                        await sendError(message, 'Please provide a video title.');
                         return;
                     }
 
+                    // Join voice channel
                     await streamer.joinVoice(guildId, channelId, streamOpts);
+
+                    // Create stream
+                    const streamYoutubeTitleUdpConn = await streamer.createStream(streamOpts);
+
+                    const [ytUrlFromTitle, searchResults] = await Promise.all([
+                        ytPlayTitle(title),
+                        yts.search(title, { limit: 1 })
+                    ]);
 
                     streamStatus.joined = true;
                     streamStatus.playing = true;
@@ -313,12 +324,10 @@ streamer.client.on('messageCreate', async (message) => {
                         cmdChannelId: message.channel.id
                     }
 
-                    const streamYoutubeTitleUdpConn = await streamer.createStream(streamOpts);
-                    const ytUrlFromTitle = await ytPlayTitle(title);
-                    if (ytUrlFromTitle) {
-                        message.reply('**Playing...**');
-                        playVideo(ytUrlFromTitle, streamYoutubeTitleUdpConn);
-                        streamer.client.user?.setActivity(status_watch("") as unknown as ActivityOptions);
+                    const videoResult = searchResults[0];
+                    if (ytUrlFromTitle && videoResult?.title) {
+                        sendPlaying(message, videoResult.title);
+                        playVideo(ytUrlFromTitle, streamYoutubeTitleUdpConn, videoResult.title);
                     }
                 }
                 break;
@@ -327,18 +336,18 @@ streamer.client.on('messageCreate', async (message) => {
                     const query = args.length > 1 ? args.slice(1).join(' ') : args[1] || args.shift() || '';
 
                     if (!query) {
-                        message.reply('**Please provide a Youtube title!**')
+                        await sendError(message, 'Please provide a search query.');
                         return;
                     }
 
                     const ytSearchQuery = await ytSearch(query);
                     try {
                         if (ytSearchQuery) {
-                            message.reply(ytSearchQuery.join('\n'));
+                            await sendList(message, ytSearchQuery, "ytsearch");
                         }
 
                     } catch (error) {
-                        message.reply("Error");
+                        await sendError(message, 'Failed to search for videos.');
                     }
                 }
                 break;
@@ -348,61 +357,41 @@ streamer.client.on('messageCreate', async (message) => {
                         message.reply('**Already Stopped!**');
                         return;
                     }
-                    streamer.leaveVoice()
-                    streamStatus.joined = false;
-                    streamStatus.joinsucc = false;
-                    streamStatus.playing = false;
-                    streamStatus.channelInfo = {
-                        guildId: '',
-                        channelId: '',
-                        cmdChannelId: streamStatus.channelInfo.cmdChannelId
-                    }
 
                     command?.cancel()
-                    
+
                     console.log("Stopped playing")
-                    message.reply('**Stopped playing.**');
+                    sendSuccess(message, 'Stopped playing video');
                 }
                 break;
-            // Disabled pause and resume commands until I find a better implementation
-            // case 'pause':
-            //     if (streamStatus.playing) {
-            //         command?.kill("SIGSTOP");
-            //         message.reply('Paused');
-            //         streamStatus.playing = false;
-            //     } else {
-            //         message.reply('Not playing');
-            //     }
-            //     break;
-            // case 'resume':
-            //     if (!streamStatus.playing) {
-            //         command?.kill("SIGCONT");
-            //         message.reply('Resumed');
-            //         streamStatus.playing = true;
-            //     } else {
-            //         message.reply('Already Playing!');
-            //     }
-            //     break;
             case 'list':
                 {
-                    message.reply(`Available videos:\n${videos.map(m => m.name).join('\n')}`);
+                    const videoList = videos.map((video, index) => `${index + 1}. \`${video.name}\``);
+                    if (videoList.length > 0) {
+                        await sendList(message, videoList);
+                    } else {
+                        await sendError(message, 'No videos found');
+                    }
                 }
                 break;
             case 'status':
                 {
-                    message.reply(`Joined: ${streamStatus.joined}\nPlaying: ${streamStatus.playing}`);
+                    await sendInfo(message, 'Status',
+                        `Joined: ${streamStatus.joined}\nPlaying: ${streamStatus.playing}`);
                 }
                 break;
             case 'refresh':
                 {
-                    // refresh video list
+                    // Refresh video list
                     const videoFiles = fs.readdirSync(config.videosDir);
                     videos = videoFiles.map(file => {
                         const fileName = path.parse(file).name;
-                        // replace space with _
+                        // Replace space with _
                         return { name: fileName.replace(/ /g, '_'), path: path.join(config.videosDir, file) };
                     });
-                    message.reply('video list refreshed ' + videos.length + ' videos found.\n' + videos.map(m => m.name).join('\n'));
+                    const refreshedList = videos.map((video, index) => `${index + 1}. \`${video.name}\``);
+                    await sendList(message,
+                        [`(${videos.length} videos found)`, ...refreshedList], "refresh");
                 }
                 break;
             case 'preview':
@@ -411,11 +400,18 @@ streamer.client.on('messageCreate', async (message) => {
                     const vid_name = videos.find(m => m.name === vid);
 
                     if (!vid_name) {
-                        message.reply('** Video not found **');
+                        await sendError(message, 'Video not found');
                         return;
                     }
 
+                    // React with camera emoji
+                    message.react('📸');
+
+                    // Reply with message to indicate that the preview is being generated
+                    message.reply('📸 **Generating preview thumbnails...**');
+
                     try {
+
                         const hasUnderscore = vid_name.name.includes('_');
                         //                                                Replace _ with space
                         const thumbnails = await ffmpegScreenshot(`${hasUnderscore ? vid_name.name : vid_name.name.replace(/_/g, ' ')}${path.extname(vid_name.path)}`);
@@ -424,9 +420,18 @@ streamer.client.on('messageCreate', async (message) => {
                             for (const screenshotPath of thumbnails) {
                                 attachments.push(new MessageAttachment(screenshotPath));
                             }
-                            await message.reply({ files: attachments });
+
+                            // Message content
+                            const content = `📸 **Preview**: \`${vid_name.name}\``;
+
+                            // Send message with attachments
+                            await message.reply({
+                                content,
+                                files: attachments
+                            });
+
                         } else {
-                            message.reply('Failed to generate preview thumbnails.');
+                            await sendError(message, 'Failed to generate preview thumbnails.');
                         }
                     } catch (error) {
                         console.error('Error generating preview thumbnails:', error);
@@ -435,84 +440,37 @@ streamer.client.on('messageCreate', async (message) => {
                 break;
             case 'help':
                 {
-                    const commands = {
-                        play: {
-                            description: 'Play a video',
-                            usage: 'play [video name]',
-                        },
+                    // Help text
+                    const helpText = [
+                        '📽 **Available Commands**',
+                        '',
+                        '🎬 **Media**',
+                        `\`${config.prefix}play\` - Play local video`,
+                        `\`${config.prefix}playlink\` - Play video from URL/YouTube/Twitch`,
+                        `\`${config.prefix}ytplay\` - Play video from YouTube`,
+                        `\`${config.prefix}stop\` - Stop playback`,
+                        '',
+                        '🛠️ **Utils**',
+                        `\`${config.prefix}list\` - Show local videos`,
+                        `\`${config.prefix}refresh\` - Update list`,
+                        `\`${config.prefix}status\` - Show status`,
+                        `\`${config.prefix}preview\` - Video preview`,
+                        '',
+                        '🔍 **Search**',
+                        `\`${config.prefix}ytsearch\` - YouTube search`,
+                        `\`${config.prefix}help\` - Show this help`
+                    ].join('\n');
 
-                        playlink: {
-                            description: 'Play a video/video/stream direct link or from youtube link',
-                            usage: 'playlink [link]',
-                        },
-
-                        ytplay: {
-                            description: 'Play a YouTube video from a title query',
-                            usage: 'ytplay [query]',
-                        },
-
-                        ytsearch: {
-                            description: 'Search for a YouTube video using a title query',
-                            usage: 'ytsearch [query]',
-                        },
-
-                        stop: {
-                            description: 'Stop the current playing video',
-                            usage: 'stop'
-                        },
-
-                        pause: {
-                            description: 'Pause the currently playing video',
-                            usage: 'pause'
-                        },
-
-                        resume: {
-                            description: 'Resume the paused video',
-                            usage: 'resume'
-                        },
-
-                        list: {
-                            description: 'Get available video list',
-                            usage: 'list'
-                        },
-
-                        refresh: {
-                            description: 'Refresh video list.',
-                            usage: 'refresh'
-                        },
-
-                        status: {
-                            description: 'Get bot status.',
-                            usage: 'status'
-                        },
-
-                        preview: {
-                            description: 'Generate and obtain preview thumbnails of a specific video.',
-                            usage: 'preview [video name]'
-                        },
-
-                        help: {
-                            description: 'Show this help message',
-                            usage: 'help'
-                        }
-                    }
-
-
-                    let help = 'Available commands:\n\n';
-
-                    for (const [name, cmd] of Object.entries(commands)) {
-                        help += `**${name}: ${cmd.description}**\n`;
-                        help += `Usage: \`${config.prefix}${cmd.usage}\`\n`;
-
-                    }
+                    // React with clipboard emoji
+                    await message.react('📋');
 
                     // Reply with all commands
-                    message.reply(help);
+                    await message.reply(helpText);
                 }
                 break;
             default:
                 {
-                    message.reply('**Invalid command**');
+                    await sendError(message, 'Invalid command');
                 }
         }
     }
@@ -520,17 +478,21 @@ streamer.client.on('messageCreate', async (message) => {
 
 streamer.client.login(config.token);
 
-async function playVideo(video: string, udpConn: MediaUdp) {
+async function playVideo(video: string, udpConn: MediaUdp, title?: string) {
     console.log("Started playing video");
     udpConn.mediaConnection.setSpeaking(true);
     udpConn.mediaConnection.setVideoStatus(true);
 
     try {
+        if (title) {
+            streamer.client.user?.setActivity(status_watch(title) as ActivityOptions);
+        }
+
         command = PCancelable.fn<string, string>(() => streamLivestreamVideo(video, udpConn))(video);
-        
+
         const res = await command;
         console.log("Finished playing video: %s", res);
-        
+
         // Check: if tmpVideo exists, delete it
         if (fs.existsSync(tmpVideo)) {
             fs.unlink(tmpVideo, (err) => {
@@ -542,9 +504,9 @@ async function playVideo(video: string, udpConn: MediaUdp) {
             });
         }
     } catch (error) {
-        if ( !(error instanceof CancelError) ) {
+        if (!(error instanceof CancelError)) {
             console.error("Error occurred while playing video:", error);
-        } 
+        }
     } finally {
         udpConn.mediaConnection.setSpeaking(false);
         udpConn.mediaConnection.setVideoStatus(false);
@@ -555,7 +517,7 @@ async function playVideo(video: string, udpConn: MediaUdp) {
 
 async function cleanupStreamStatus() {
     streamer.leaveVoice();
-    streamer.client.user?.setActivity(status_idle() as unknown as ActivityOptions);
+    streamer.client.user?.setActivity(status_idle() as ActivityOptions);
 
     streamStatus.joined = false;
     streamStatus.joinsucc = false;
@@ -582,8 +544,8 @@ async function ytVideoCache(ytVideo: YouTubeVideo): Promise<string | null> {
 
     // Find the best video format
     const bestVideoFormat = videoFormats.reduce((best: VideoFormat | null, current: VideoFormat) => {
-        return !best || parseInt(current.qualityLabel!) > parseInt(best.qualityLabel!) 
-            ? current 
+        return !best || parseInt(current.qualityLabel!) > parseInt(best.qualityLabel!)
+            ? current
             : best;
     }, null);
 
@@ -721,7 +683,7 @@ async function ytPlayTitle(title: string): Promise<string | null> {
 async function ytSearch(title: string): Promise<string[]> {
     try {
         const searchResults = await yts.search(title, { limit: 5 });
-        return searchResults.map((video, index) => 
+        return searchResults.map((video, index) =>
             `${index + 1}. \`${video.title}\``
         );
     } catch (error) {
@@ -730,12 +692,64 @@ async function ytSearch(title: string): Promise<string[]> {
     }
 }
 
+const status_idle = () => {
+    return new CustomStatus(new Client())
+        .setEmoji('📽')
+        .setState('Watching Something!')
+}
+
+const status_watch = (name: string) => {
+    return new CustomStatus(new Client())
+        .setEmoji('📽')
+        .setState(`Playing ${name}...`)
+}
+
+// Funtction to send playing message
+async function sendPlaying(message: Message, title: string) {
+    const content = `📽 **Now Playing**: \`${title}\``;
+    await Promise.all([
+        message.react('▶️'),
+        message.reply(content)
+    ]);
+}
+
 // Function to send finish message
 async function sendFinishMessage() {
     const channel = streamer.client.channels.cache.get(config.cmdChannelId.toString()) as TextChannel;
     if (channel) {
-        await channel.send('⏹️ **Finished**: Finished playing video.');
+        channel.send('⏹️ **Finished**: Finished playing video.');
     }
+}
+
+// Function to send video list message
+async function sendList(message: Message, items: string[], type?: string) {
+    await message.react('📋');
+    if (type == "ytsearch") {
+        await message.reply(`📋 **Search Results**:\n${items.join('\n')}`);
+    } else if (type == "refresh") {
+        await message.reply(`📋 **Video list refreshed**:\n${items.join('\n')}`);
+    } else {
+        await message.channel.send(`📋 **Local Videos List**:\n${items.join('\n')}`);
+    }
+}
+
+// Function to send info message
+async function sendInfo(message: Message, title: string, description: string) {
+    await message.react('ℹ️');
+    await message.channel.send(`ℹ️ **${title}**: ${description}`);
+}
+
+
+// Function to send success message
+async function sendSuccess(message: Message, description: string) {
+    await message.react('✅');
+    await message.channel.send(`✅ **Success**: ${description}`);
+}
+
+// Function to send error message
+async function sendError(message: Message, error: string) {
+    await message.react('❌');
+    await message.reply(`❌ **Error**: ${error}`);
 }
 
 // Run server if enabled in config
