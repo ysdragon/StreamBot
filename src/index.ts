@@ -1,4 +1,4 @@
-import { Client, TextChannel, CustomStatus, ActivityOptions, MessageAttachment } from "discord.js-selfbot-v13";
+import { Client, TextChannel, CustomStatus, ActivityOptions, Message, MessageAttachment } from "discord.js-selfbot-v13";
 import { streamLivestreamVideo, MediaUdp, StreamOptions, Streamer, Utils } from "@dank074/discord-video-stream";
 import config from "./config.js";
 import fs from 'fs';
@@ -526,10 +526,10 @@ async function playVideo(video: string, udpConn: MediaUdp) {
     udpConn.mediaConnection.setVideoStatus(true);
 
     try {
-        command = PCancelable.fn<string, string>((input, onCancel) => streamLivestreamVideo(video, udpConn))(video);
+        command = PCancelable.fn<string, string>(() => streamLivestreamVideo(video, udpConn))(video);
         
         const res = await command;
-        console.log("Finished playing video " + res);
+        console.log("Finished playing video: %s", res);
         
         // Check: if tmpVideo exists, delete it
         if (fs.existsSync(tmpVideo)) {
@@ -551,11 +551,6 @@ async function playVideo(video: string, udpConn: MediaUdp) {
         await sendFinishMessage();
         await cleanupStreamStatus();
     }
-}
-
-async function sendFinishMessage() {
-    const channel = streamer.client.channels.cache.get(config.cmdChannelId.toString()) as TextChannel;
-    await channel?.send("**Finished playing video.**");
 }
 
 async function cleanupStreamStatus() {
@@ -732,6 +727,14 @@ async function ytSearch(title: string): Promise<string[]> {
     } catch (error) {
         console.log("No videos found with the given title.");
         return [];
+    }
+}
+
+// Function to send finish message
+async function sendFinishMessage() {
+    const channel = streamer.client.channels.cache.get(config.cmdChannelId.toString()) as TextChannel;
+    if (channel) {
+        await channel.send('⏹️ **Finished**: Finished playing video.');
     }
 }
 
