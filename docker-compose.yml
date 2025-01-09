@@ -37,7 +37,7 @@ services:
       STREAM_H26X_PRESET: "ultrafast"
 
       # Videos server options
-      SERVER_ENABLED: "true" # Whether to enable the built-in video server
+      SERVER_ENABLED: "false" # Whether to enable the built-in video server
       SERVER_USERNAME: "admin" # The username for the video server's admin interface
       SERVER_PASSWORD: "admin" # The password for the video server's admin interface
       SERVER_PORT: "3000" # The port number the video server will listen on
