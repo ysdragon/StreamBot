@@ -9,6 +9,7 @@ import yts from 'play-dl';
 import ffmpeg from 'fluent-ffmpeg';
 import { getVideoParams, ffmpegScreenshot } from "./utils/ffmpeg.js";
 import PCancelable, { CancelError } from "p-cancelable";
+import logger from './utils/logger.js';
 
 // YouTube video interface
 interface YouTubeVideo {
@@ -100,12 +101,12 @@ let videos = videoFiles.map(file => {
 });
 
 // print out all videos
-console.log(`Available videos:\n${videos.map(m => m.name).join('\n')}`);
+logger.info(`Available videos:\n${videos.map(m => m.name).join('\n')}`);
 
 // Ready event
 streamer.client.on("ready", async () => {
     if (streamer.client.user) {
-        console.log(`--- ${streamer.client.user.tag} is ready ---`);
+        logger.info(`${streamer.client.user.tag} is ready`);
         streamer.client.user?.setActivity(status_idle() as ActivityOptions);
     }
 });
@@ -200,7 +201,7 @@ streamer.client.on('messageCreate', async (message) => {
                             }
 
                         } catch (error) {
-                            console.error('Unable to determine resolution, using static resolution....', error);
+                            logger.error('Unable to determine resolution, using static resolution....', error);
                         }
                     }
 
@@ -219,7 +220,7 @@ streamer.client.on('messageCreate', async (message) => {
                     }
 
                     // Log playing video
-                    console.log('Playing a local video: %s', video.path);
+                    logger.info(`Playing local video: ${video.path}`);
 
                     // Send playing message
                     sendPlaying(message, videoname || "Local Video");
@@ -262,7 +263,7 @@ streamer.client.on('messageCreate', async (message) => {
                                 const [videoInfo, yturl] = await Promise.all([
                                     ytdl.getInfo(link),
                                     getVideoUrl(link).catch(error => {
-                                        console.error("Error:", error);
+                                        logger.error("Error:", error);
                                         return null;
                                     })
                                 ]);
@@ -360,7 +361,7 @@ streamer.client.on('messageCreate', async (message) => {
 
                     command?.cancel()
 
-                    console.log("Stopped playing")
+                    logger.info("Stopped playing")
                     sendSuccess(message, 'Stopped playing video');
                 }
                 break;
@@ -434,7 +435,7 @@ streamer.client.on('messageCreate', async (message) => {
                             await sendError(message, 'Failed to generate preview thumbnails.');
                         }
                     } catch (error) {
-                        console.error('Error generating preview thumbnails:', error);
+                        logger.error('Error generating preview thumbnails:', error);
                     }
                 }
                 break;
@@ -479,7 +480,7 @@ streamer.client.on('messageCreate', async (message) => {
 streamer.client.login(config.token);
 
 async function playVideo(video: string, udpConn: MediaUdp, title?: string) {
-    console.log("Started playing video");
+    logger.info("Started playing video");
     udpConn.mediaConnection.setSpeaking(true);
     udpConn.mediaConnection.setVideoStatus(true);
 
@@ -491,21 +492,21 @@ async function playVideo(video: string, udpConn: MediaUdp, title?: string) {
         command = PCancelable.fn<string, string>(() => streamLivestreamVideo(video, udpConn))(video);
 
         const res = await command;
-        console.log("Finished playing video: %s", res);
+        logger.info(`Finished playing video: ${res}`);
 
         // Check: if tmpVideo exists, delete it
         if (fs.existsSync(tmpVideo)) {
             fs.unlink(tmpVideo, (err) => {
                 if (err) {
-                    console.error(`Error deleting video: ${err}`);
+                    logger.error(`Error deleting video: ${err}`);
                 } else {
-                    console.log(`Temp Video deleted: ${tmpVideo}`);
+                    logger.info(`Temp video deleted: ${tmpVideo}`);
                 }
             });
         }
     } catch (error) {
         if (!(error instanceof CancelError)) {
-            console.error("Error occurred while playing video:", error);
+            logger.error("Error occurred while playing video:", error);
         }
     } finally {
         udpConn.mediaConnection.setSpeaking(false);
@@ -559,7 +560,7 @@ async function ytVideoCache(ytVideo: YouTubeVideo): Promise<string | null> {
         const videoUrl = bestVideoFormat.url;
         const audioUrl = bestAudioFormat.url;
 
-        console.log("Downloading/Merging ...");
+        logger.info("Downloading/Merging video streams...");
 
         return new Promise((resolve, reject) => {
             // Use ffmpeg to merge video and audio
@@ -569,11 +570,11 @@ async function ytVideoCache(ytVideo: YouTubeVideo): Promise<string | null> {
                 .outputOptions("-c:v copy")
                 .outputOptions("-c:a aac")
                 .on("end", () => {
-                    console.log("Downloading/Merging finished!");
+                    logger.info("Video merge completed successfully");
                     resolve(tmpVideo);
                 })
                 .on("error", (err) => {
-                    console.error("Error merging streams:", err);
+                    logger.error("Error merging video streams:", err);
                     reject(err);
                 })
                 .save(tmpVideo);
@@ -590,7 +591,7 @@ async function getTwitchStreamUrl(url: string): Promise<string | null> {
         return stream.url;
         // match best resolution with configured resolution
     } catch (error) {
-        console.error("Error occurred while getting Twitch stream URL:", error);
+        logger.error("Failed to get Twitch stream URL:", error);
         return null;
     }
 }
@@ -631,7 +632,7 @@ async function getVideoUrl(videoUrl: string): Promise<string | null> {
             }
         }
     } catch (error) {
-        console.error("Error occurred while getting video URL:", error);
+        logger.error("Failed to get video URL:", error);
         return null;
     }
 }
@@ -674,7 +675,7 @@ async function ytPlayTitle(title: string): Promise<string | null> {
 
         return null;
     } catch (error) {
-        console.error("Error occurred while searching for videos:", error);
+        logger.error("Video search failed:", error);
         return null;
     }
 }
@@ -687,7 +688,7 @@ async function ytSearch(title: string): Promise<string[]> {
             `${index + 1}. \`${video.title}\``
         );
     } catch (error) {
-        console.log("No videos found with the given title.");
+        logger.warn("No videos found with the given title");
         return [];
     }
 }

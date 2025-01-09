@@ -9,6 +9,7 @@ import axios from "axios";
 import https from "https";
 import ffmpeg from "fluent-ffmpeg"
 import { ffmpegScreenshot } from "./utils/ffmpeg.js";
+import logger from "./utils/logger.js";
 
 const app = express();
 const agent = new https.Agent({ rejectUnauthorized: false });
@@ -541,7 +542,7 @@ app.get("/preview/:file", (req, res) => {
 
   ffmpeg.ffprobe(`${config.videosDir}/${file}`, (err, metadata) => {
     if (err) {
-      console.log(err);
+      logger.error(err);
       res.status(500).send("Internal Server Error");
       return;
     }
@@ -633,7 +634,7 @@ app.get("/api/preview/:file/:id", async (req, res) => {
     try {
       await ffmpegScreenshot(file);
     } catch (err) {
-      console.log(err);
+      logger.error(err);
       res.status(500).send("Internal Server Error");
       return;
     }
@@ -693,5 +694,5 @@ const stringify = (obj) => {
 }
 
 app.listen(config.server_port, () => {
-  console.log(`Server is running on port ${config.server_port}`);
+  logger.info(`Server is running on port ${config.server_port}`);
 });
