@@ -1,81 +1,85 @@
+<div align="center">
+
 # StreamBot
 
-This is a Discord selfbot that allows streaming videos, and streams from YouTube and direct links to a Discord voice channel.
+A powerful Discord selfbot for streaming videos and live content to Discord voice channels.
 
-## Features
+![GitHub release](https://img.shields.io/github/v/release/ysdragon/StreamBot)
+[![CodeFactor](https://www.codefactor.io/repository/github/ysdragon/streambot/badge)](https://www.codefactor.io/repository/github/ysdragon/streambot)
 
-- Stream videos from a local folder.
-- Stream and search for YouTube videos using titles.
-- Stream YouTube videos/live streams by link.
-- Stream arbitrary links (video files, live streams, twitch live streams, etc.).
-- Playback commands: play, playlink, ytplay, pause, resume, stop.
-- List available videos.
-- Refresh the video list.
-- Get playback status.
+</div>
 
-## Requirements
-[Bun](https://bun.sh/) _(version 1.1.39 or later)_
-[FFmpeg](https://www.ffmpeg.org/) _(must be added to path or installed to working directory)_
+## ✨ Features
 
-## Installation Steps:
+- 📁 Stream videos from a local folder
+- 🎬 Stream and search YouTube videos by title
+- 🔗 Stream YouTube videos/live streams by link
+- 🌐 Stream from arbitrary links (video files, live streams, Twitch, etc.)
+- ⚡ Playback controls: play, stop
+- 📋 Video library management
 
-This project is [hosted on github](https://github.com/ysdragon/StreamBot).
-1. You can clone this project directly using this command:
+## 📋 Requirements
+- [Bun](https://bun.sh/) `v1.1.39+`
+- [FFmpeg](https://www.ffmpeg.org/) _(in PATH or working directory)_
 
-```
+## 🚀 Installation
+
+This project is [hosted on GitHub](https://github.com/ysdragon/StreamBot).
+
+1. Clone the repository:
+```bash
 git clone https://github.com/ysdragon/StreamBot
 ```
 
-2. Use [bun](https://bun.sh) or another npm package manager to install all the dependencies:
-```
-bun install 
+2. Install dependencies:
+```bash
+bun install
 ```
 
-3. Rename [.env.example](https://github.com/ysdragon/StreamBot/blob/main/.env.example) to .env
+3. Configure environment:
+   - Rename `.env.example` to `.env`
+   - Update configuration values
 
-## Usage
-Start the built artifacts:
-```
+## 🎮 Usage
+
+Start with Bun:
+```bash
 bun run start
 ```
 
-If you want to use Node.js, you can use the following command:
-```
+Start with Node.js:
+```bash
 bun run build
 bun run start:node
 ```
 
-## Start with Docker Compose
+## 🐳 Docker Setup
 
-If you want to use Docker Compose, follow these steps:
-
-1. Create a new folder.
-2. Run the following command to download the `docker-compose.yml` file:
-   ```bash
-   wget https://raw.githubusercontent.com/ysdragon/StreamBot/main/docker-compose.yml
-   ```
-3. Edit the `docker-compose.yml` file and update the necessary information (e.g., TOKEN, PREFIX, GUILD_ID, etc.).
-4. Run the following command to start the Docker Compose setup:
-   ```bash
-   docker compose up -d
-   ```
-   
-## Commands
-
+1. Create a new directory
+2. Download compose file:
+```bash
+wget https://raw.githubusercontent.com/ysdragon/StreamBot/main/docker-compose.yml
 ```
-play <video name> - Play a video from the local folder.
-playlink <url> - Play a (YouTube video/live stream, direct link).
-ytplay <query> - Play a YouTube video from a title query.
-ytsearch <query> - Search for a YouTube video using a title query.
-stop - Stop the current playback.
-pause - Pause the current playback.
-resume - Resume playback.
-list - List available videos.
-refresh - Refresh the video list.
-status - Get current playback status.
-preview <video name> - Generate and obtain preview thumbnails of a specific video.
-help - Show help message.
+3. Configure `docker-compose.yml`
+4. Launch:
+```bash
+docker compose up -d
 ```
+
+## 🎯 Commands
+
+| Command | Description |
+|---------|-------------|
+| `play <video>` | Play local video |
+| `playlink <url>` | Stream from URL/YouTube/Twitch |
+| `ytplay <query>` | Play YouTube video |
+| `ytsearch <query>` | Search YouTube |
+| `stop` | Stop playback |
+| `list` | Show video library |
+| `refresh` | Update video list |
+| `status` | Show playback status |
+| `preview <video>` | Generate thumbnails |
+| `help` | Show help |
 
 ## Configuration
 
@@ -92,7 +96,7 @@ VIDEO_CHANNEL_ID = "" # The ID of the Discord voice/video channel where your sel
 # General options
 VIDEOS_DIR = "./videos" # The local path where you store video files
 PREVIEW_CACHE_DIR = "./tmp/preview-cache" # The local path where your self-bot will cache video preview thumbnails
-YT_VIDEO_CACHE: "false" # Whether to enable youtube video caching, set to "true" to enable, "false" to disable
+YT_VIDEO_CACHE = "false" # Whether to enable youtube video caching, set to "true" to enable, "false" to disable
 YT_VIDEO_CACHE_DIR = "./tmp/video-cache" # The local path where your self-bot will cache youtube videos
 
 # Stream options
@@ -137,18 +141,19 @@ An optional basic HTTP server can be enabled to manage the video library:
 
 - [x]  Adding ytsearch and ytplay commands   
 
-# Contributing
-Public contributions are welcome!  
-You can create a [new issue](https://github.com/ysdragon/StreamBot/issues/new) for bugs, or feel free to open a [pull request](https://github.com/ysdragon/StreamBot/pulls) for any and all your changes or work-in-progress features.
+## 🤝 Contributing
+Contributions are welcome! Feel free to:
+- 🐛 Report bugs via [issues](https://github.com/ysdragon/StreamBot/issues/new)
+- 🔧 Submit [pull requests](https://github.com/ysdragon/StreamBot/pulls)
+- 💡 Suggest new features
 
-
-## Legal
+## ⚠️ Legal
 
 This bot may violate Discord's Terms of Service. Use at your own risk.
 
 ## إبراء الذمة
 أتبرأ من أي استخدام غير أخلاقي لهذا المشروع أمام الله.
 
-## License
+## 📝 License
 
-This project is licensed under the MIT License. See the [LICENSE](https://github.com/ysdragon/StreamBot/blob/main/LICENSE) file for details.
+Licensed under MIT License. See [LICENSE](https://github.com/ysdragon/StreamBot/blob/main/LICENSE) for details.
