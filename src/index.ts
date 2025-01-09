@@ -10,6 +10,26 @@ import ffmpeg from 'fluent-ffmpeg';
 import { getVideoParams, ffmpegScreenshot } from "./utils/ffmpeg.js";
 import PCancelable, {CancelError} from "p-cancelable";
 
+// YouTube video interface
+interface YouTubeVideo {
+    id?: string;
+    title: string;
+    formats: VideoFormat[];
+    videoDetails?: {
+        isLiveContent: boolean;
+    };
+}
+
+// Video format interface
+interface VideoFormat {
+    hasVideo: boolean;
+    hasAudio: boolean;
+    url: string;
+    bitrate?: number;
+    qualityLabel?: string;
+    container?: string;
+}
+
 interface TwitchStream {
     quality: string;
     resolution: string;
@@ -552,7 +572,7 @@ async function cleanupStreamStatus() {
     };
 }
 
-async function ytVideoCache(ytVideo: any): Promise<string | null> {
+async function ytVideoCache(ytVideo: YouTubeVideo): Promise<string | null> {
     // Filter formats to get the best video format without audio
     const videoFormats = ytVideo.formats.filter(
         (format: { hasVideo: boolean; hasAudio: boolean }) =>
@@ -566,15 +586,15 @@ async function ytVideoCache(ytVideo: any): Promise<string | null> {
     );
 
     // Find the best video format
-    const bestVideoFormat = videoFormats.reduce((best: any, current: any) => {
-        return !best || parseInt(current.qualityLabel) > parseInt(best.qualityLabel)
-            ? current
+    const bestVideoFormat = videoFormats.reduce((best: VideoFormat | null, current: VideoFormat) => {
+        return !best || parseInt(current.qualityLabel!) > parseInt(best.qualityLabel!) 
+            ? current 
             : best;
     }, null);
 
     // Find the best audio format
-    const bestAudioFormat = audioFormats.reduce((best: any, current: any) => {
-        return !best || current.bitrate > best.bitrate ? current : best;
+    const bestAudioFormat = audioFormats.reduce((best: VideoFormat | null, current: VideoFormat) => {
+        return !best || (current.bitrate || 0) > (best.bitrate || 0) ? current : best;
     }, null);
 
     // Check if we have both formats
@@ -618,6 +638,7 @@ async function getTwitchStreamUrl(url: string): Promise<string | null> {
     }
 }
 
+// Function to get video URL from YouTube
 async function getVideoUrl(videoUrl: string): Promise<string | null> {
     try {
         const video = await ytdl.getInfo(videoUrl, { playerClients: ['WEB', 'ANDROID'] });
@@ -628,15 +649,21 @@ async function getVideoUrl(videoUrl: string): Promise<string | null> {
             const tsFormats = video.formats.filter(
                 (format) => format.container === "ts"
             );
-            const highestTsFormat = tsFormats.reduce((prev: any, current: any) => {
-                return !prev || current.bitrate > prev.bitrate ? current : prev;
+            const highestTsFormat = tsFormats.reduce((prev: VideoFormat | null, current: VideoFormat) => {
+                return !prev || (current.bitrate || 0) > (prev.bitrate || 0) ? current : prev;
             }, null);
 
             return highestTsFormat ? highestTsFormat.url : null;
         } else {
             // Check if youtube video caching is enabled
             if (config.ytVideoCache) {
-                return await ytVideoCache(video);
+                return await ytVideoCache({
+                    title: video.videoDetails.title,
+                    formats: video.formats,
+                    videoDetails: {
+                        isLiveContent: video.videoDetails.isLiveContent
+                    }
+                });
             } else {
                 const videoFormats = video.formats
                     .filter((format: {
@@ -652,6 +679,7 @@ async function getVideoUrl(videoUrl: string): Promise<string | null> {
     }
 }
 
+// Function to play video from YouTube
 async function ytPlayTitle(title: string): Promise<string | null> {
     try {
         // Search for videos using the provided title
@@ -668,7 +696,13 @@ async function ytPlayTitle(title: string): Promise<string | null> {
 
                 // Check if youtube video caching is enabled
                 if (config.ytVideoCache) {
-                    return await ytVideoCache(video);
+                    return await ytVideoCache({
+                        title: ytVideoInfo.videoDetails.title,
+                        formats: ytVideoInfo.formats,
+                        videoDetails: {
+                            isLiveContent: ytVideoInfo.videoDetails.isLive
+                        }
+                    });
                 } else {
                     const videoFormats = ytVideoInfo.formats
                         .filter((format: {
@@ -688,17 +722,13 @@ async function ytPlayTitle(title: string): Promise<string | null> {
     }
 }
 
+// Function to search for videos on YouTube
 async function ytSearch(title: string): Promise<string[]> {
     try {
-        const r = await yts.search(title, { limit: 5 });
-        const searchResults: string[] = [];
-        if (r.length > 0) {
-            r.forEach(function (video: any, index: number) {
-                const result = `${index + 1}. \`${video.title}\``;
-                searchResults.push(result);
-            });
-        }
-        return searchResults;
+        const searchResults = await yts.search(title, { limit: 5 });
+        return searchResults.map((video, index) => 
+            `${index + 1}. \`${video.title}\``
+        );
     } catch (error) {
         console.log("No videos found with the given title.");
         return [];
