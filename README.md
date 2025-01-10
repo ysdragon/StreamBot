@@ -96,8 +96,6 @@ VIDEO_CHANNEL_ID = "" # The ID of the Discord voice/video channel where your sel
 # General options
 VIDEOS_DIR = "./videos" # The local path where you store video files
 PREVIEW_CACHE_DIR = "./tmp/preview-cache" # The local path where your self-bot will cache video preview thumbnails
-YT_VIDEO_CACHE = "false" # Whether to enable youtube video caching, set to "true" to enable, "false" to disable
-YT_VIDEO_CACHE_DIR = "./tmp/video-cache" # The local path where your self-bot will cache youtube videos
 
 # Stream options
 STREAM_RESPECT_VIDEO_PARAMS = "false"  # This option is used to respect video parameters such as width, height, fps, bitrate, and max bitrate.

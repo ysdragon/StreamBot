@@ -16,8 +16,6 @@ export default {
     // General options
     videosDir: process.env.VIDEOS_DIR ? process.env.VIDEOS_DIR : './videos',
     previewCacheDir: process.env.PREVIEW_CACHE_DIR ? process.env.PREVIEW_CACHE_DIR : './tmp/preview-cache',
-    ytVideoCache: process.env.YT_VIDEO_CACHE ? parseBoolean(process.env.YT_VIDEO_CACHE) : false,
-    ytVideoCacheDir: process.env.YT_VIDEO_CACHE_DIR ? process.env.YT_VIDEO_CACHE_DIR : './tmp/video-cache',
 
     // Stream options
     respect_video_params: process.env.STREAM_RESPECT_VIDEO_PARAMS ? parseBoolean(process.env.STREAM_RESPECT_VIDEO_PARAMS) : false,
