@@ -4,7 +4,7 @@ import config from "./config.js";
 import fs from 'fs';
 import path from 'path';
 import ytdl from '@distube/ytdl-core';
-import { getStream } from 'twitch-m3u8';
+import { getStream, getVod } from 'twitch-m3u8';
 import yts from 'play-dl';
 import { getVideoParams, ffmpegScreenshot } from "./utils/ffmpeg.js";
 import PCancelable, { CancelError } from "p-cancelable";
@@ -252,7 +252,7 @@ streamer.client.on('messageCreate', async (message) => {
                         case link.includes('twitch.tv'):
                             {
                                 const twitchId = link.split('/').pop() as string;
-                                const twitchUrl = await getTwitchStreamUrl(twitchId);
+                                const twitchUrl = await getTwitchStreamUrl(link);
                                 if (twitchUrl) {
                                     sendPlaying(message, `${twitchId}'s Twitch Stream`);
                                     playVideo(twitchUrl, streamLinkUdpConn, `twitch.tv/${twitchId}`);
@@ -495,12 +495,29 @@ async function cleanupStreamStatus() {
     };
 }
 
-// Function to get Twitch stream URL
+// Function to get Twitch URL
 async function getTwitchStreamUrl(url: string): Promise<string | null> {
     try {
-        const streams = await getStream(url);
-        const stream = streams.find((stream: TwitchStream) => stream.resolution === `${config.width}x${config.height}`) || streams[0];
-        return stream.url;
+        // Handle VODs
+        if (url.includes('/videos/')) {
+            const vodId = url.split('/videos/').pop() as string;
+            const vodInfo = await getVod(vodId);
+            const vod = vodInfo.find((stream: TwitchStream) => stream.resolution === `${config.width}x${config.height}`) || vodInfo[0];
+            if (vod?.url) {
+                return vod.url;
+            }
+            logger.error("No VOD URL found");
+            return null;
+        } else {
+            const twitchId = url.split('/').pop() as string;
+            const streams = await getStream(twitchId);
+            const stream = streams.find((stream: TwitchStream) => stream.resolution === `${config.width}x${config.height}`) || streams[0];
+            if (stream?.url) {
+                return stream.url;
+            }      
+            logger.error("No Stream URL found");
+            return null;
+        }
     } catch (error) {
         logger.error("Failed to get Twitch stream URL:", error);
         return null;
