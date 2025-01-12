@@ -52,15 +52,11 @@ const streamOpts: StreamOptions = {
     h26xPreset: config.h26xPreset
 };
 
-// Create the videosFolder dir if it doesn't exist
-if (!fs.existsSync(config.videosDir)) {
-    fs.mkdirSync(config.videosDir);
-}
+// Create the videosFolder dir
+fs.mkdirSync(config.videosDir, { recursive: true });
 
-// Create the previewCache dir if it doesn't exist
-if (!fs.existsSync(config.previewCacheDir)) {
-    fs.mkdirSync(config.previewCacheDir);
-}
+// Create preview cache directory structure
+fs.mkdirSync(config.previewCacheDir, { recursive: true });
 
 // Get all video files
 const videoFiles = fs.readdirSync(config.videosDir);
