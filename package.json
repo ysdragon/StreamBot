@@ -15,11 +15,11 @@
   "author": "ysdragon",
   "license": "MIT",
   "dependencies": {
-    "@dank074/discord-video-stream": "^3.2.0",
-    "@distube/ytdl-core": "^4.15.8",
+    "@dank074/discord-video-stream": "^4.2.0",
+    "@distube/ytdl-core": "^4.16.0",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
-    "discord.js-selfbot-v13": "^3.4.6",
+    "discord.js-selfbot-v13": "^3.5.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-session": "^1.18.1",
@@ -29,14 +29,14 @@
     "play-dl": "^1.9.7",
     "tslib": "^2.8.1",
     "twitch-m3u8": "^1.1.5",
-    "winston": "^3.11.0"
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/express-session": "^1.18.1",
     "@types/fluent-ffmpeg": "^2.1.27",
     "@types/multer": "^1.4.12",
-    "@types/node": "^22.10.2",
-    "typescript": "^5.7.2"
+    "@types/node": "^22.13.0",
+    "typescript": "^5.7.3"
   }
 }

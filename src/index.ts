@@ -39,17 +39,22 @@ const streamOpts: StreamOptions = {
     rtcpSenderReportEnabled: true,
 
     /**
-     * Ffmpeg will read frames at native framerate.
-     * Disabling this make ffmpeg read frames as fast as possible and setTimeout will be used to control output fps instead. 
-     * Enabling this can result in certain streams having video/audio out of sync
-     */
-    readAtNativeFps: false,
-
-    /**
      * Encoding preset for H264 or H265. The faster it is, the lower the quality
      * Available presets: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow
      */
-    h26xPreset: config.h26xPreset
+    h26xPreset: config.h26xPreset,
+
+    /**
+     * Adds ffmpeg params to minimize latency and start outputting video as fast as possible.
+     * Might create lag in video output in some rare cases
+     */
+    minimizeLatency: true,
+
+    /**
+     * Use or disable ChaCha20-Poly1305 encryption.
+     * ChaCha20-Poly1305 encryption is faster than AES-256-GCM, except when using AES-NI
+     */
+    forceChacha20Encryption: false
 };
 
 // Create the videosFolder dir
