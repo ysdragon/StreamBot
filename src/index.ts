@@ -57,11 +57,20 @@ const streamOpts: StreamOptions = {
     forceChacha20Encryption: false
 };
 
-// Create the videosFolder dir
-fs.mkdirSync(config.videosDir, { recursive: true });
+// Create the videosFolder dir if it doesn't exist
+if (!fs.existsSync(config.videosDir)) {
+  fs.mkdirSync(config.videosDir);
+}
 
-// Create preview cache directory structure
-fs.mkdirSync(config.previewCacheDir, { recursive: true });
+// Create previewCache parent dir if it doesn't exist
+if (!fs.existsSync(path.dirname(config.previewCacheDir))) {
+  fs.mkdirSync(path.dirname(config.previewCacheDir), { recursive: true });
+}
+
+// Create the previewCache dir if it doesn't exist
+if (!fs.existsSync(config.previewCacheDir)) {
+  fs.mkdirSync(config.previewCacheDir);
+}
 
 // Get all video files
 const videoFiles = fs.readdirSync(config.videosDir);
