@@ -1,5 +1,5 @@
 import { Client, TextChannel, CustomStatus, Message, MessageAttachment, ActivityOptions } from "discord.js-selfbot-v13";
-import { streamLivestreamVideo, MediaUdp, StreamOptions, Streamer, Utils } from "@dank074/discord-video-stream";
+import { NewApi, StreamOptions, Streamer, Utils } from "@dank074/discord-video-stream";
 import config from "./config.js";
 import fs from 'fs';
 import path from 'path';
@@ -7,7 +7,6 @@ import ytdl from '@distube/ytdl-core';
 import { getStream, getVod } from 'twitch-m3u8';
 import yts from 'play-dl';
 import { getVideoParams, ffmpegScreenshot } from "./utils/ffmpeg.js";
-import PCancelable, { CancelError } from "p-cancelable";
 import logger from './utils/logger.js';
 import { Youtube } from './utils/youtube.js';
 import { TwitchStream } from './@types/index.js';
@@ -15,8 +14,8 @@ import { TwitchStream } from './@types/index.js';
 // Create a new instance of Streamer
 const streamer = new Streamer(new Client());
 
-// Create a cancelable command
-let command: PCancelable<string> | undefined;
+// Declare variable to store the current stream command
+let current: ReturnType<typeof NewApi.prepareStream>["command"];
 
 // Create a new instance of Youtube
 const youtube = new Youtube();
@@ -59,17 +58,17 @@ const streamOpts: StreamOptions = {
 
 // Create the videosFolder dir if it doesn't exist
 if (!fs.existsSync(config.videosDir)) {
-  fs.mkdirSync(config.videosDir);
+    fs.mkdirSync(config.videosDir);
 }
 
 // Create previewCache parent dir if it doesn't exist
 if (!fs.existsSync(path.dirname(config.previewCacheDir))) {
-  fs.mkdirSync(path.dirname(config.previewCacheDir), { recursive: true });
+    fs.mkdirSync(path.dirname(config.previewCacheDir), { recursive: true });
 }
 
 // Create the previewCache dir if it doesn't exist
 if (!fs.existsSync(config.previewCacheDir)) {
-  fs.mkdirSync(config.previewCacheDir);
+    fs.mkdirSync(config.previewCacheDir);
 }
 
 // Get all video files
@@ -147,7 +146,6 @@ streamer.client.on('messageCreate', async (message) => {
     if (args.length === 0) return; // No arguments provided
 
     const user_cmd = args.shift()!.toLowerCase();
-    const [guildId, channelId] = [config.guildId, config.videoChannelId!];
 
     if (config.cmdChannelId.includes(message.channel.id)) {
         switch (user_cmd) {
@@ -190,20 +188,6 @@ streamer.client.on('messageCreate', async (message) => {
                         }
                     }
 
-                    // Join voice channel
-                    await streamer.joinVoice(guildId, channelId, streamOpts)
-
-                    // Create stream
-                    const streamUdpConn = await streamer.createStream(streamOpts);
-
-                    streamStatus.joined = true;
-                    streamStatus.playing = true;
-                    streamStatus.channelInfo = {
-                        guildId: guildId,
-                        channelId: channelId,
-                        cmdChannelId: message.channel.id
-                    }
-
                     // Log playing video
                     logger.info(`Playing local video: ${video.path}`);
 
@@ -211,7 +195,7 @@ streamer.client.on('messageCreate', async (message) => {
                     sendPlaying(message, videoname || "Local Video");
 
                     // Play video
-                    playVideo(video.path, streamUdpConn, videoname);
+                    playVideo(video.path, videoname);
                 }
                 break;
             case 'playlink':
@@ -228,20 +212,6 @@ streamer.client.on('messageCreate', async (message) => {
                         return;
                     }
 
-                    // Join voice channel
-                    await streamer.joinVoice(guildId, channelId, streamOpts);
-
-                    // Create stream
-                    const streamLinkUdpConn = await streamer.createStream(streamOpts);
-
-                    streamStatus.joined = true;
-                    streamStatus.playing = true;
-                    streamStatus.channelInfo = {
-                        guildId: guildId,
-                        channelId: channelId,
-                        cmdChannelId: message.channel.id
-                    }
-
                     switch (true) {
                         case ytdl.validateURL(link):
                             {
@@ -255,7 +225,7 @@ streamer.client.on('messageCreate', async (message) => {
 
                                 if (yturl) {
                                     sendPlaying(message, videoInfo.videoDetails.title);
-                                    playVideo(yturl, streamLinkUdpConn, videoInfo.videoDetails.title);
+                                    playVideo(yturl, videoInfo.videoDetails.title);
                                 }
                             }
                             break;
@@ -265,25 +235,20 @@ streamer.client.on('messageCreate', async (message) => {
                                 const twitchUrl = await getTwitchStreamUrl(link);
                                 if (twitchUrl) {
                                     sendPlaying(message, `${twitchId}'s Twitch Stream`);
-                                    playVideo(twitchUrl, streamLinkUdpConn, `twitch.tv/${twitchId}`);
+                                    playVideo(twitchUrl, `twitch.tv/${twitchId}`);
                                 }
                             }
                             break;
                         default:
                             {
                                 sendPlaying(message, "URL");
-                                playVideo(link, streamLinkUdpConn, "URL");
+                                playVideo(link, "URL");
                             }
                     }
                 }
                 break;
             case 'ytplay':
                 {
-                    if (streamStatus.joined) {
-                        sendError(message, 'Already joined');
-                        return;
-                    }
-
                     const title = args.length > 1 ? args.slice(1).join(' ') : args[1] || args.shift() || '';
 
                     if (!title) {
@@ -291,29 +256,23 @@ streamer.client.on('messageCreate', async (message) => {
                         return;
                     }
 
-                    // Join voice channel
-                    await streamer.joinVoice(guildId, channelId, streamOpts);
+                    try {
+                        const [ytUrlFromTitle, searchResults] = await Promise.all([
+                            ytPlayTitle(title),
+                            yts.search(title, { limit: 1 })
+                        ]);
 
-                    // Create stream
-                    const streamYoutubeTitleUdpConn = await streamer.createStream(streamOpts);
-
-                    const [ytUrlFromTitle, searchResults] = await Promise.all([
-                        ytPlayTitle(title),
-                        yts.search(title, { limit: 1 })
-                    ]);
-
-                    streamStatus.joined = true;
-                    streamStatus.playing = true;
-                    streamStatus.channelInfo = {
-                        guildId: guildId,
-                        channelId: channelId,
-                        cmdChannelId: message.channel.id
-                    }
-
-                    const videoResult = searchResults[0];
-                    if (ytUrlFromTitle && videoResult?.title) {
-                        sendPlaying(message, videoResult.title);
-                        playVideo(ytUrlFromTitle, streamYoutubeTitleUdpConn, videoResult.title);
+                        const videoResult = searchResults[0];
+                        if (ytUrlFromTitle && videoResult?.title) {
+                            sendPlaying(message, videoResult.title);
+                            playVideo(ytUrlFromTitle, videoResult.title);
+                        } else {
+                            throw new Error('Could not find video');
+                        }
+                    } catch (error) {
+                        logger.error('Failed to play YouTube video:', error);
+                        await cleanupStreamStatus();
+                        await sendError(message, 'Failed to play video. Please try again.');
                     }
                 }
                 break;
@@ -344,10 +303,21 @@ streamer.client.on('messageCreate', async (message) => {
                         return;
                     }
 
-                    command?.cancel()
+                    try {
+                        if (current) {
+                            current.kill("SIGKILL");
+                            current = undefined;
+                        }
+                        
+                        streamer.stopStream();
+                        await cleanupStreamStatus();
+                        logger.info("Stream forcefully terminated");
+                    } catch (error) {
+                        logger.error("Error during force termination:", error);
+                    }
 
-                    logger.info("Stopped playing")
-                    sendSuccess(message, 'Stopped playing video');
+                    await sendSuccess(message, "Stream terminated");
+                    logger.info("Stop command executed");
                 }
                 break;
             case 'list':
@@ -463,28 +433,48 @@ streamer.client.on('messageCreate', async (message) => {
 });
 
 // Function to play video
-async function playVideo(video: string, udpConn: MediaUdp, title?: string) {
-    logger.info("Started playing video");
-    udpConn.mediaConnection.setSpeaking(true);
-    udpConn.mediaConnection.setVideoStatus(true);
+async function playVideo(video: string, title?: string) {
+    logger.info("Started playing " + video);
+    const [guildId, channelId, cmdChannelId] = [config.guildId, config.videoChannelId, config.cmdChannelId!];
+
+    // Join voice channel
+    await streamer.joinVoice(guildId, channelId, streamOpts)
+    streamStatus.joined = true;
+    streamStatus.playing = true;
+    streamStatus.channelInfo = {
+        guildId: guildId,
+        channelId: channelId,
+        cmdChannelId: cmdChannelId
+    }
 
     try {
         if (title) {
             streamer.client.user?.setActivity(status_watch(title) as ActivityOptions);
         }
 
-        command = PCancelable.fn<string, string>(() => streamLivestreamVideo(video, udpConn))(video);
+        const { command, output } = NewApi.prepareStream(video, {
+            width: streamOpts.width,
+            height: streamOpts.height,
+            frameRate: streamOpts.fps,
+            bitrateVideo: streamOpts.bitrateKbps,
+            bitrateVideoMax: streamOpts.maxBitrateKbps,
+            hardwareAcceleratedDecoding: streamOpts.hardwareAcceleratedDecoding,
+            videoCodec: Utils.normalizeVideoCodec(streamOpts.videoCodec),
+        })
 
-        const res = await command;
-        logger.info(`Finished playing video: ${res}`);
+        current = command;
+        await NewApi.playStream(output, streamer)
+            .catch(() => current?.kill("SIGTERM"));
+        logger.info(`Finished playing video: ${video}`);
+        return;
 
     } catch (error) {
-        if (!(error instanceof CancelError)) {
-            logger.error("Error occurred while playing video:", error);
-        }
+        logger.error("Error occurred while playing video:", error);
+        current?.kill("SIGTERM");
+        streamer.leaveVoice();
     } finally {
-        udpConn.mediaConnection.setSpeaking(false);
-        udpConn.mediaConnection.setVideoStatus(false);
+        streamer.stopStream()
+        streamer.leaveVoice();
         await sendFinishMessage();
         await cleanupStreamStatus();
     }
@@ -505,6 +495,7 @@ async function cleanupStreamStatus() {
     };
 }
 
+
 // Function to get Twitch URL
 async function getTwitchStreamUrl(url: string): Promise<string | null> {
     try {
@@ -524,7 +515,7 @@ async function getTwitchStreamUrl(url: string): Promise<string | null> {
             const stream = streams.find((stream: TwitchStream) => stream.resolution === `${config.width}x${config.height}`) || streams[0];
             if (stream?.url) {
                 return stream.url;
-            }      
+            }
             logger.error("No Stream URL found");
             return null;
         }
@@ -608,6 +599,14 @@ async function sendError(message: Message, error: string) {
     await message.react('❌');
     await message.reply(`❌ **Error**: ${error}`);
 }
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+    if (!(error instanceof Error && error.message.includes('SIGTERM'))) {
+        logger.error('Uncaught Exception:', error);
+        return
+    }
+});
 
 // Run server if enabled in config
 if (config.server_enabled) {
