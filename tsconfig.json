@@ -21,6 +21,7 @@
     "forceConsistentCasingInFileNames": true, /* Ensure that casing is correct in imports. */
     /* Type Checking */
     "strict": true, /* Enable all strict type-checking options. */
+    "strictNullChecks": false, /* When type checking, take into account null and undefined. */
     "skipLibCheck": true, /* Skip type checking all .d.ts files. */
 
     "allowJs": true, 
