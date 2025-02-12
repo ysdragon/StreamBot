@@ -3,6 +3,11 @@ name: StreamBot Docker Image CI
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - '.env.example'
+      - 'docker-compose.yml'
+      - 'LICENSE'
+      - 'README.md'
   release:
     types: [published]
     
