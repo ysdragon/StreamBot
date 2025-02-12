@@ -84,31 +84,44 @@ export class Youtube {
     private getDirectVideoUrl(video: YouTubeVideo): string | null {
         try {
             // Get formats with both video and audio
-            const formats = video.formats.filter(format => format.hasVideo && format.hasAudio);
+            const formats = video.formats.filter(format => 
+                format.hasVideo && 
+                format.hasAudio && 
+                !format.isLiveContent && 
+                format.container === 'mp4'
+            );
             
             if (formats.length === 0) {
-                logger.warn('No formats with both video and audio found');
+                logger.warn('No suitable formats found');
                 return null;
             }
 
-            // Sort formats by quality priority
+            // Sort formats by quality and bitrate
             formats.sort((a, b) => {
-                const qualityA = a.qualityLabel ? parseInt(a.qualityLabel) : 0;
-                const qualityB = b.qualityLabel ? parseInt(b.qualityLabel) : 0;
-                
+                const qualityA = a.qualityLabel ? parseInt(a.qualityLabel.replace(/[^0-9]/g, '')) : 0;
+                const qualityB = b.qualityLabel ? parseInt(b.qualityLabel.replace(/[^0-9]/g, '')) : 0;
+
                 if (qualityA !== qualityB) {
                     return qualityB - qualityA;
                 }
-                
-                // If same quality, compare by bitrate
+
                 return (b.bitrate || 0) - (a.bitrate || 0);
             });
 
-            const bestFormat = formats[0];
-            logger.info(`Selected format: ${bestFormat.qualityLabel || 'N/A'} ${bestFormat.container || 'N/A'} (${Math.round((bestFormat.bitrate || 0) / 1000)} kbps)`);
+            // Select the best format that doesn't exceed our stream settings
+            const bestFormat = formats.find(format => {
+                const height = parseInt(format.qualityLabel?.replace(/[^0-9]/g, '') || '0');
+                return height <= 1080;
+            }) || formats[formats.length - 1];
 
+            if (!bestFormat) {
+                logger.warn('No suitable format found after filtering');
+                return null;
+            }
+
+            logger.info(`Selected format: ${bestFormat.qualityLabel || 'N/A'} ${bestFormat.container || 'N/A'} (${Math.round((bestFormat.bitrate || 0) / 1000)} kbps)`);
             
-            return bestFormat?.url || null;
+            return bestFormat.url || null;
         } catch (error) {
             logger.error('Error selecting video format:', error);
             return null;
