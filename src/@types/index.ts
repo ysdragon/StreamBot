@@ -5,6 +5,7 @@ export interface VideoFormat {
     bitrate?: number;
     qualityLabel?: string;
     container?: string;
+    isLiveContent?: boolean;
 }
 
 export interface YouTubeVideo {
