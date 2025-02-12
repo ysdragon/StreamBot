@@ -97,6 +97,7 @@ const streamStatus = {
     joined: false,
     joinsucc: false,
     playing: false,
+    manualStop: false,
     channelInfo: {
         guildId: config.guildId,
         channelId: config.videoChannelId,
@@ -304,20 +305,33 @@ streamer.client.on('messageCreate', async (message) => {
                     }
 
                     try {
+                        streamStatus.manualStop = true;
+
                         if (current) {
                             current.kill("SIGKILL");
                             current = undefined;
                         }
-                        
-                        streamer.stopStream();
-                        await cleanupStreamStatus();
+
+                        await sendSuccess(message, 'Stopped playing video.');
                         logger.info("Stream forcefully terminated");
+
+
+                        streamer.stopStream();
+                        streamer.leaveVoice();
+                        streamer.client.user?.setActivity(status_idle() as ActivityOptions);
+
+                        streamStatus.joined = false;
+                        streamStatus.joinsucc = false;
+                        streamStatus.playing = false;
+                        streamStatus.channelInfo = {
+                            guildId: "",
+                            channelId: "",
+                            cmdChannelId: "",
+                        };
+
                     } catch (error) {
                         logger.error("Error during force termination:", error);
                     }
-
-                    await sendSuccess(message, "Stream terminated");
-                    logger.info("Stop command executed");
                 }
                 break;
             case 'list':
@@ -437,6 +451,9 @@ async function playVideo(video: string, title?: string) {
     logger.info("Started playing " + video);
     const [guildId, channelId, cmdChannelId] = [config.guildId, config.videoChannelId, config.cmdChannelId!];
 
+    // Reset manual stop flag
+    streamStatus.manualStop = false;
+
     // Join voice channel
     await streamer.joinVoice(guildId, channelId, streamOpts)
     streamStatus.joined = true;
@@ -464,37 +481,57 @@ async function playVideo(video: string, title?: string) {
 
         current = command;
         await NewApi.playStream(output, streamer)
-            .catch(() => current?.kill("SIGTERM"));
-        logger.info(`Finished playing video: ${video}`);
-        return;
+            .catch((error) => {
+                if (error?.message?.includes('SIGKILL')) {
+                    return;
+                }
+                current?.kill("SIGTERM");
+                throw error;
+            });
 
+        logger.info(`Finished playing video: ${video}`);
     } catch (error) {
         logger.error("Error occurred while playing video:", error);
         current?.kill("SIGTERM");
-        streamer.leaveVoice();
     } finally {
-        streamer.stopStream()
-        streamer.leaveVoice();
-        await sendFinishMessage();
         await cleanupStreamStatus();
+        if (!streamStatus.manualStop) {
+            await sendFinishMessage();
+        }
     }
 }
 
-// Function to cleanup stream status
+// Function to cleanup stream status - updated
 async function cleanupStreamStatus() {
-    streamer.leaveVoice();
-    streamer.client.user?.setActivity(status_idle() as ActivityOptions);
+    if (streamStatus.manualStop) {
+        return;
+    }
 
-    streamStatus.joined = false;
-    streamStatus.joinsucc = false;
-    streamStatus.playing = false;
-    streamStatus.channelInfo = {
-        guildId: "",
-        channelId: "",
-        cmdChannelId: "",
-    };
+    try {
+        streamer.stopStream();
+        streamer.leaveVoice();
+
+        if (current) {
+            current.kill("SIGTERM");
+            current = undefined;
+        }
+
+        streamer.client.user?.setActivity(status_idle() as ActivityOptions);
+
+        // Reset all status flags
+        streamStatus.joined = false;
+        streamStatus.joinsucc = false;
+        streamStatus.playing = false;
+        streamStatus.manualStop = false;
+        streamStatus.channelInfo = {
+            guildId: "",
+            channelId: "",
+            cmdChannelId: "",
+        };
+    } catch (error) {
+        logger.error("Error during cleanup:", error);
+    }
 }
-
 
 // Function to get Twitch URL
 async function getTwitchStreamUrl(url: string): Promise<string | null> {
