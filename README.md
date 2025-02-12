@@ -147,7 +147,7 @@ Contributions are welcome! Feel free to:
 
 ## ⚠️ Legal
 
-This bot may violate Discord's Terms of Service. Use at your own risk.
+This bot may violate Discord's ToS. Use at your own risk.
 
 ## إبراء الذمة
 أتبرأ من أي استخدام غير أخلاقي لهذا المشروع أمام الله.
