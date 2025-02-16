@@ -55,16 +55,39 @@ bun run start:node
 
 ## 🐳 Docker Setup
 
-1. Create a new directory
-2. Download compose file:
+### Standard Setup
+1. Create a directory and navigate to it:
+```bash
+mkdir streambot && cd streambot
+```
+
+2. Download the compose file:
 ```bash
 wget https://raw.githubusercontent.com/ysdragon/StreamBot/main/docker-compose.yml
 ```
-3. Configure `docker-compose.yml`
-4. Launch:
+
+3. Configure environment variables in `docker-compose.yml`
+
+4. Launch container:
 ```bash
 docker compose up -d
 ```
+
+### Cloudflare WARP Setup
+1. Download WARP compose file:
+```bash
+wget https://raw.githubusercontent.com/ysdragon/StreamBot/main/docker-compose-warp.yml
+```
+
+2. Configure `docker-compose-warp.yml` and add your WARP license key
+
+3. Launch with WARP:
+```bash
+docker compose -f docker-compose-warp.yml up -d
+```
+> [!NOTE]
+> The basic video server will not work if you use WARP.
+
 
 ## 🎯 Commands
 
