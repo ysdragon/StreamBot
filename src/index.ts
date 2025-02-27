@@ -1,5 +1,5 @@
 import { Client, TextChannel, CustomStatus, Message, MessageAttachment, ActivityOptions } from "discord.js-selfbot-v13";
-import { NewApi, StreamOptions, Streamer, Utils } from "@dank074/discord-video-stream";
+import { Streamer, Utils, prepareStream, playStream } from "@dank074/discord-video-stream";
 import config from "./config.js";
 import fs from 'fs';
 import path from 'path';
@@ -14,46 +14,22 @@ import { TwitchStream } from './@types/index.js';
 // Create a new instance of Streamer
 const streamer = new Streamer(new Client());
 
-// Declare variable to store the current stream command
-let current: ReturnType<typeof NewApi.prepareStream>["command"];
+// Declare a controller to abort the stream
+let controller: AbortController;
 
 // Create a new instance of Youtube
 const youtube = new Youtube();
 
-const streamOpts: StreamOptions = {
+const streamOpts = {
     width: config.width,
     height: config.height,
-    fps: config.fps,
-    bitrateKbps: config.bitrateKbps,
-    maxBitrateKbps: config.maxBitrateKbps,
-    hardwareAcceleratedDecoding: config.hardwareAcceleratedDecoding,
+    frameRate: config.fps,
+    bitrateVideo: config.bitrateKbps,
+    bitrateVideoMax: config.maxBitrateKbps,
     videoCodec: Utils.normalizeVideoCodec(config.videoCodec),
-
-    /**
-     * Advanced options
-     * 
-     * Enables sending RTCP sender reports. Helps the receiver synchronize the audio/video frames, except in some weird
-     * cases which is why you can disable it
-     */
-    rtcpSenderReportEnabled: true,
-
-    /**
-     * Encoding preset for H264 or H265. The faster it is, the lower the quality
-     * Available presets: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow
-     */
-    h26xPreset: config.h26xPreset,
-
-    /**
-     * Adds ffmpeg params to minimize latency and start outputting video as fast as possible.
-     * Might create lag in video output in some rare cases
-     */
-    minimizeLatency: true,
-
-    /**
-     * Use or disable ChaCha20-Poly1305 encryption.
-     * ChaCha20-Poly1305 encryption is faster than AES-256-GCM, except when using AES-NI
-     */
-    forceChacha20Encryption: false
+    hardwareAcceleratedDecoding: config.hardwareAcceleratedDecoding,
+    minimizeLatency: false,
+    h26xPreset: config.h26xPreset
 };
 
 // Create the videosFolder dir if it doesn't exist
@@ -173,15 +149,15 @@ streamer.client.on('messageCreate', async (message) => {
                             streamOpts.height = resolution.height;
                             streamOpts.width = resolution.width;
                             if (resolution.bitrate != "N/A") {
-                                streamOpts.bitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
+                                streamOpts.bitrateVideo = Math.floor(Number(resolution.bitrate) / 1000);
                             }
 
                             if (resolution.maxbitrate != "N/A") {
-                                streamOpts.maxBitrateKbps = Math.floor(Number(resolution.bitrate) / 1000);
+                                streamOpts.bitrateVideoMax = Math.floor(Number(resolution.bitrate) / 1000);
                             }
 
                             if (resolution.fps) {
-                                streamOpts.fps = resolution.fps
+                                streamOpts.frameRate = resolution.fps
                             }
 
                         } catch (error) {
@@ -306,15 +282,11 @@ streamer.client.on('messageCreate', async (message) => {
 
                     try {
                         streamStatus.manualStop = true;
-
-                        if (current) {
-                            current.kill("SIGKILL");
-                            current = undefined;
-                        }
+                        
+                        controller?.abort();
 
                         await sendSuccess(message, 'Stopped playing video.');
-                        logger.info("Stream forcefully terminated");
-
+                        logger.info("Stopped playing video.");
 
                         streamer.stopStream();
                         streamer.leaveVoice();
@@ -455,7 +427,7 @@ async function playVideo(video: string, title?: string) {
     streamStatus.manualStop = false;
 
     // Join voice channel
-    await streamer.joinVoice(guildId, channelId, streamOpts)
+    await streamer.joinVoice(guildId, channelId)
     streamStatus.joined = true;
     streamStatus.playing = true;
     streamStatus.channelInfo = {
@@ -469,30 +441,23 @@ async function playVideo(video: string, title?: string) {
             streamer.client.user?.setActivity(status_watch(title) as ActivityOptions);
         }
 
-        const { command, output } = NewApi.prepareStream(video, {
-            width: streamOpts.width,
-            height: streamOpts.height,
-            frameRate: streamOpts.fps,
-            bitrateVideo: streamOpts.bitrateKbps,
-            bitrateVideoMax: streamOpts.maxBitrateKbps,
-            hardwareAcceleratedDecoding: streamOpts.hardwareAcceleratedDecoding,
-            videoCodec: Utils.normalizeVideoCodec(streamOpts.videoCodec),
-        })
+        // Abort any existing controller
+        controller?.abort();
+        controller = new AbortController();
 
-        current = command;
-        await NewApi.playStream(output, streamer)
-            .catch((error) => {
-                if (error?.message?.includes('SIGKILL')) {
-                    return;
-                }
-                current?.kill("SIGTERM");
-                throw error;
-            });
+        const { command, output } = prepareStream(video, streamOpts, controller.signal);
+
+        command.on("error", (err) => {
+            logger.error("An error happened with ffmpeg", err);
+        });
+
+        await playStream(output, streamer, undefined, controller.signal)
+            .catch(() => controller.abort());
 
         logger.info(`Finished playing video: ${video}`);
     } catch (error) {
         logger.error("Error occurred while playing video:", error);
-        current?.kill("SIGTERM");
+        controller?.abort();
     } finally {
         await cleanupStreamStatus();
         if (!streamStatus.manualStop) {
@@ -508,13 +473,9 @@ async function cleanupStreamStatus() {
     }
 
     try {
+        controller?.abort();
         streamer.stopStream();
         streamer.leaveVoice();
-
-        if (current) {
-            current.kill("SIGTERM");
-            current = undefined;
-        }
 
         streamer.client.user?.setActivity(status_idle() as ActivityOptions);
 
