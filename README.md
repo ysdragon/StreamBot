@@ -2,6 +2,8 @@
 
 # StreamBot
 
+[![Ceasefire Now](https://badge.techforpalestine.org/default)](https://techforpalestine.org/learn-more)
+
 A powerful Discord selfbot for streaming videos and live content to Discord voice channels.
 
 ![GitHub release](https://img.shields.io/github/v/release/ysdragon/StreamBot)
