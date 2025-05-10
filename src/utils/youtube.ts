@@ -1,62 +1,43 @@
-import ytdl from '@distube/ytdl-core';
+import ytdl_dlp from './yt-dlp.js';
 import logger from './logger.js';
 import yts from 'play-dl';
-import { VideoFormat, YouTubeVideo } from '../@types/index.js';
+import { YouTubeVideo } from '../@types/index.js';
 
 export class Youtube {
     async getVideoInfo(url: string): Promise<YouTubeVideo | null> {
         try {
-            if (!ytdl.validateURL(url)) {
-                throw new Error('Invalid YouTube URL');
-            }
+            const videoData = await ytdl_dlp(url, { dumpSingleJson: true, noPlaylist: true });
 
-            const info = await ytdl.getInfo(url, { playerClients: ['WEB', 'ANDROID'] });
-            return {
-                id: info.videoDetails.videoId,
-                title: info.videoDetails.title,
-                formats: info.formats,
-                videoDetails: {
-                    isLiveContent: info.videoDetails.isLiveContent
-                }
-            };
+            if (typeof videoData === 'object' && videoData !== null && videoData.id && videoData.title) {
+                return {
+                    id: videoData.id,
+                    title: videoData.title,
+                    formats: [],
+                    videoDetails: {
+                        isLiveContent: videoData.is_live === true || videoData.live_status === 'is_live'
+                    }
+                };
+            }
+            logger.warn(`Failed to parse video info from yt-dlp for URL: ${url}. Data: ${JSON.stringify(videoData)}`);
+            return null;
         } catch (error) {
-            logger.error('Failed to get video info:', error);
+            logger.error(`Failed to get video info using yt-dlp for URL ${url}:`, error);
             return null;
         }
     }
 
-    async getVideoUrl(videoUrl: string): Promise<string | null> {
-        try {
-            const video = await this.getVideoInfo(videoUrl);
-            if (!video) return null;
-
-            if (video.videoDetails?.isLiveContent) {
-                return this.getLiveStreamUrl(video);
-            }
-
-            return this.getDirectVideoUrl(video);
-        } catch (error) {
-            logger.error("Failed to get video URL:", error);
-            return null;
-        }
-    }
-
-    async searchAndPlay(title: string): Promise<string | null> {
+    async searchAndGetPageUrl(title: string): Promise<{ pageUrl: string | null, title: string | null }> {
         try {
             const results = await yts.search(title, { limit: 1 });
-            if (results.length === 0 || !results[0].id) return null;
-
-            const videoInfo = await ytdl.getInfo(results[0].id);
-            return this.getDirectVideoUrl({
-                title: videoInfo.videoDetails.title,
-                formats: videoInfo.formats,
-                videoDetails: {
-                    isLiveContent: videoInfo.videoDetails.isLive
-                }
-            });
+            if (results.length === 0 || !results[0]?.url) {
+                logger.warn(`No video found on YouTube for title: "${title}" using play-dl.`);
+                return { pageUrl: null, title: null };
+            }
+            
+            return { pageUrl: results[0].url, title: results[0].title || null };
         } catch (error) {
-            logger.error("Video search failed:", error);
-            return null;
+            logger.error(`Video search for page URL failed for title "${title}":`, error);
+            return { pageUrl: null, title: null };
         }
     }
 
@@ -67,63 +48,29 @@ export class Youtube {
                 `${index + 1}. \`${video.title}\``
             );
         } catch (error) {
-            logger.warn("No videos found with the given title");
+            logger.warn(`No videos found with the given title: "${query}"`);
             return [];
         }
     }
 
-    private getLiveStreamUrl(video: YouTubeVideo): string | null {
-        const tsFormats = video.formats.filter(format => format.container === "ts");
-        const highestTsFormat = tsFormats.reduce<VideoFormat | null>((prev, current) => {
-            return !prev || (current.bitrate || 0) > (prev.bitrate || 0) ? current : prev;
-        }, null);
-
-        return highestTsFormat ? highestTsFormat.url : null;
-    }
-
-    private getDirectVideoUrl(video: YouTubeVideo): string | null {
+    async getLiveStreamUrl(youtubePageUrl: string): Promise<string | null> {
         try {
-            // Get formats with both video and audio
-            const formats = video.formats.filter(format => 
-                format.hasVideo && 
-                format.hasAudio && 
-                !format.isLiveContent && 
-                format.container === 'mp4'
-            );
-            
-            if (formats.length === 0) {
-                logger.warn('No suitable formats found');
-                return null;
-            }
-
-            // Sort formats by quality and bitrate
-            formats.sort((a, b) => {
-                const qualityA = a.qualityLabel ? parseInt(a.qualityLabel.replace(/[^0-9]/g, '')) : 0;
-                const qualityB = b.qualityLabel ? parseInt(b.qualityLabel.replace(/[^0-9]/g, '')) : 0;
-
-                if (qualityA !== qualityB) {
-                    return qualityB - qualityA;
-                }
-
-                return (b.bitrate || 0) - (a.bitrate || 0);
+            const streamUrl = await ytdl_dlp(youtubePageUrl, {
+                getUrl: true,
+                format: 'best[protocol=m3u8_native]/best[protocol=http_dash_segments]/best',
+                noPlaylist: true,
+                quiet: true,
+                noWarnings: true,
             });
 
-            // Select the best format that doesn't exceed our stream settings
-            const bestFormat = formats.find(format => {
-                const height = parseInt(format.qualityLabel?.replace(/[^0-9]/g, '') || '0');
-                return height <= 1080;
-            }) || formats[formats.length - 1];
-
-            if (!bestFormat) {
-                logger.warn('No suitable format found after filtering');
-                return null;
+            if (typeof streamUrl === 'string' && streamUrl.trim()) {
+                logger.info(`Got live stream URL for ${youtubePageUrl}: ${streamUrl.trim()}`);
+                return streamUrl.trim();
             }
-
-            logger.info(`Selected format: ${bestFormat.qualityLabel || 'N/A'} ${bestFormat.container || 'N/A'} (${Math.round((bestFormat.bitrate || 0) / 1000)} kbps)`);
-            
-            return bestFormat.url || null;
+            logger.warn(`yt-dlp did not return a valid live stream URL for: ${youtubePageUrl}. Received: ${streamUrl}`);
+            return null;
         } catch (error) {
-            logger.error('Error selecting video format:', error);
+            logger.error(`Failed to get live stream URL using yt-dlp for ${youtubePageUrl}:`, error);
             return null;
         }
     }
