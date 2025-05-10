@@ -364,7 +364,7 @@ app.post("/login", (req, res) => {
 app.get("/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
-      console.error("Error destroying session:", err);
+      logger.error("Error destroying session:", err);
     }
     res.redirect("/login");
   });
@@ -374,7 +374,7 @@ app.get("/logout", (req, res) => {
 app.get("/", (req, res) => {
   fs.readdir(config.videosDir, (err, files) => {
     if (err) {
-      console.error(err);
+      logger.error(err);
       res.status(500).send("Internal Server Error");
       return;
     }
@@ -524,11 +524,11 @@ app.post("/api/remote_upload", upload.single("link"), async (req, res) => {
     });
 
     writer.on("error", (err) => {
-      console.error(err);
+      logger.error(err);
       res.status(500).send("Error uploading file");
     });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).send("Error uploading file");
   }
 });
@@ -649,7 +649,7 @@ app.get("/delete/:file", (req, res) => {
   if (fs.existsSync(filePath)) {
     fs.unlink(filePath, (err) => {
       if (err) {
-        console.error(err);
+        logger.error(err);
         res.status(500).send("Internal Server Error");
       } else {
         res.redirect("/");

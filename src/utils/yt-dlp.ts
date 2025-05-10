@@ -29,11 +29,11 @@ if (platform === "win32") {
     } else if (arch === "x64") {
         determinedFilename = "yt-dlp";
     } else {
-        console.warn(`[WARN] Unsupported Linux architecture '${arch}' for yt-dlp. Falling back to generic 'yt-dlp'. Download might fail.`);
+        logger.warn(`Unsupported Linux architecture '${arch}' for yt-dlp. Falling back to generic 'yt-dlp'. Download might fail.`);
         determinedFilename = "yt-dlp";
     }
 } else {
-    console.warn(`[WARN] Unsupported OS '${platform}' for yt-dlp. Attempting to use generic 'yt-dlp'. Download might fail.`);
+    logger.warn(`Unsupported OS '${platform}' for yt-dlp. Attempting to use generic 'yt-dlp'. Download might fail.`);
     determinedFilename = "yt-dlp";
 }
 
@@ -74,7 +74,7 @@ function json(str: string) {
 
 export async function downloadExecutable() {
     if (!existsSync(exePath)) {
-        console.info("[INFO] Yt-dlp couldn't be found, trying to download...");
+        logger.info("Yt-dlp couldn't be found, trying to download...");
         const releases = await got.get("https://api.github.com/repos/yt-dlp/yt-dlp/releases?per_page=1").json();
         const release = releases[0];
         const asset = release.assets.find(ast => ast.name === filename);
@@ -85,7 +85,7 @@ export async function downloadExecutable() {
                 return 0;
             }).then(resolve).catch(reject);
         });
-        console.info("[INFO] Yt-dlp has been downloaded.");
+        logger.info("Yt-dlp has been downloaded.");
     }
 }
 
@@ -128,7 +128,7 @@ export default async function ytdl(url: string, options: Partial<YTFlags> = {}, 
     const exitCode = await proc.exited;
 
     if (exitCode !== 0) {
-        console.error(`yt-dlp process exited with code ${exitCode}. Stderr: ${errorData}`);
+        logger.error(`yt-dlp process exited with code ${exitCode}. Stderr: ${errorData}`);
         throw new Error(`yt-dlp failed with exit code ${exitCode}: ${errorData || data}`);
     }
 
@@ -173,17 +173,17 @@ export async function downloadToTempFile(url: string, options: Partial<YTFlags> 
             try {
                 unlinkSync(tempFilePath);
             } catch (cleanupError) {
-                console.warn(`[WARN] Failed to cleanup temp file ${tempFilePath} after yt-dlp error:`, cleanupError);
+                logger.warn(`Failed to cleanup temp file ${tempFilePath} after yt-dlp error:`, cleanupError);
             }
         }
         const errorMessage = `yt-dlp failed to download to temp file. Exit code: ${exitCode}. Stderr: ${errorData.trim()}`;
-        console.error(`[ERROR] ${errorMessage}`);
+        logger.error(errorMessage);
         throw new Error(errorMessage);
     }
 
     if (!existsSync(tempFilePath)) {
         const errorMessage = `yt-dlp exited successfully but temp file ${tempFilePath} was not created. Stderr: ${errorData.trim()}`;
-        console.error(`[ERROR] ${errorMessage}`);
+        logger.error(errorMessage);
         throw new Error(errorMessage);
     }
     
@@ -192,7 +192,6 @@ export async function downloadToTempFile(url: string, options: Partial<YTFlags> 
 }
 
 export async function checkForUpdatesAndUpdate(): Promise<void> {
-    logger.info("Checking for yt-dlp updates...");
     try {
         await downloadExecutable();
         const updateProc = spawn([exePath, "--update"], {
