@@ -1,6 +1,6 @@
 {
   "name": "streambot",
-  "version": "1.1.8",
+  "version": "1.2.0",
   "description": "A self bot to stream movies/videos to Discord.",
   "main": "dist/index.js",
   "type": "module",
