@@ -531,7 +531,12 @@ async function playVideo(message: Message, videoSource: string, title?: string) 
         logger.error(`Error in playVideo for ${title || videoSource}:`, error);
         if (!controller.signal.aborted) controller?.abort();
     } finally {
+        if (!streamStatus.manualStop && !controller.signal.aborted) {
+            await sendFinishMessage();
+        }
+
         await cleanupStreamStatus();
+
         if (tempFilePath && !isLiveYouTubeStream) {
             try {
                 logger.info(`Attempting to delete temp file: ${tempFilePath}`);
@@ -540,9 +545,6 @@ async function playVideo(message: Message, videoSource: string, title?: string) 
             } catch (cleanupError) {
                 logger.error(`Failed to delete temp file ${tempFilePath}:`, cleanupError);
             }
-        }
-        if (!streamStatus.manualStop && !controller.signal.aborted) {
-            await sendFinishMessage();
         }
     }
 }
