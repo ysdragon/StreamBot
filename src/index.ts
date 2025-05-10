@@ -3,13 +3,23 @@ import { Streamer, Utils, prepareStream, playStream } from "@dank074/discord-vid
 import config from "./config.js";
 import fs from 'fs';
 import path from 'path';
-import ytdl from '@distube/ytdl-core';
 import { getStream, getVod } from 'twitch-m3u8';
 import yts from 'play-dl';
 import { getVideoParams, ffmpegScreenshot } from "./utils/ffmpeg.js";
 import logger from './utils/logger.js';
+import { downloadExecutable, downloadToTempFile, checkForUpdatesAndUpdate } from './utils/yt-dlp.js';
 import { Youtube } from './utils/youtube.js';
 import { TwitchStream } from './@types/index.js';
+
+// Download yt-dlp and check for updates
+(async () => {
+    try {
+        await downloadExecutable();
+        await checkForUpdatesAndUpdate();
+    } catch (error) {
+        logger.error("Error during initial yt-dlp setup/update:", error);
+    }
+})();
 
 // Create a new instance of Streamer
 const streamer = new Streamer(new Client());
@@ -172,7 +182,7 @@ streamer.client.on('messageCreate', async (message) => {
                     sendPlaying(message, videoname || "Local Video");
 
                     // Play video
-                    playVideo(video.path, videoname);
+                    playVideo(message, video.path, videoname);
                 }
                 break;
             case 'playlink':
@@ -190,19 +200,20 @@ streamer.client.on('messageCreate', async (message) => {
                     }
 
                     switch (true) {
-                        case ytdl.validateURL(link):
+                        case (link.includes('youtube.com/') || link.includes('youtu.be/')):
                             {
-                                const [videoInfo, yturl] = await Promise.all([
-                                    ytdl.getInfo(link),
-                                    getVideoUrl(link).catch(error => {
-                                        logger.error("Error:", error);
-                                        return null;
-                                    })
-                                ]);
+                                try {
+                                    const videoDetails = await youtube.getVideoInfo(link);
 
-                                if (yturl) {
-                                    sendPlaying(message, videoInfo.videoDetails.title);
-                                    playVideo(yturl, videoInfo.videoDetails.title);
+                                    if (videoDetails && videoDetails.title) {
+                                        playVideo(message, link, videoDetails.title);
+                                    } else {
+                                        logger.error(`Failed to get YouTube video info for link: ${link}.`);
+                                        await sendError(message, 'Failed to process YouTube link.');
+                                    }
+                                } catch (error) {
+                                    logger.error(`Error processing YouTube link: ${link}`, error);
+                                    await sendError(message, 'Error processing YouTube link.');
                                 }
                             }
                             break;
@@ -212,14 +223,14 @@ streamer.client.on('messageCreate', async (message) => {
                                 const twitchUrl = await getTwitchStreamUrl(link);
                                 if (twitchUrl) {
                                     sendPlaying(message, `${twitchId}'s Twitch Stream`);
-                                    playVideo(twitchUrl, `twitch.tv/${twitchId}`);
+                                    playVideo(message, twitchUrl, `twitch.tv/${twitchId}`);
                                 }
                             }
                             break;
                         default:
                             {
                                 sendPlaying(message, "URL");
-                                playVideo(link, "URL");
+                                playVideo(message, link, "URL");
                             }
                     }
                 }
@@ -234,16 +245,15 @@ streamer.client.on('messageCreate', async (message) => {
                     }
 
                     try {
-                        const [ytUrlFromTitle, searchResults] = await Promise.all([
-                            ytPlayTitle(title),
-                            yts.search(title, { limit: 1 })
-                        ]);
-
+                        const searchResults = await yts.search(title, { limit: 1 });
                         const videoResult = searchResults[0];
-                        if (ytUrlFromTitle && videoResult?.title) {
-                            sendPlaying(message, videoResult.title);
-                            playVideo(ytUrlFromTitle, videoResult.title);
+
+                        const searchResult = await youtube.searchAndGetPageUrl(title);
+                        
+                        if (searchResult.pageUrl && searchResult.title) {
+                            playVideo(message, searchResult.pageUrl, searchResult.title);
                         } else {
+                            logger.warn(`No video found or title missing for search: "${title}" using youtube.searchAndGetPageUrl.`);
                             throw new Error('Could not find video');
                         }
                     } catch (error) {
@@ -419,54 +429,125 @@ streamer.client.on('messageCreate', async (message) => {
 });
 
 // Function to play video
-async function playVideo(video: string, title?: string) {
-    logger.info("Started playing " + video);
+async function playVideo(message: Message, videoSource: string, title?: string) {
+    logger.info(`Attempting to play: ${title || videoSource}`);
     const [guildId, channelId, cmdChannelId] = [config.guildId, config.videoChannelId, config.cmdChannelId!];
 
-    // Reset manual stop flag
     streamStatus.manualStop = false;
 
-    // Join voice channel
-    await streamer.joinVoice(guildId, channelId)
-    streamStatus.joined = true;
-    streamStatus.playing = true;
-    streamStatus.channelInfo = {
-        guildId: guildId,
-        channelId: channelId,
-        cmdChannelId: cmdChannelId
-    }
+    let inputForFfmpeg: any = videoSource;
+    let tempFilePath: string | null = null;
+    let downloadInProgressMessage: Message | null = null;
+    let isLiveYouTubeStream = false;
 
     try {
+        if (typeof videoSource === 'string' && (videoSource.includes('youtube.com/') || videoSource.includes('youtu.be/'))) {
+            const videoDetails = await youtube.getVideoInfo(videoSource);
+
+            if (videoDetails?.videoDetails?.isLiveContent) {
+                isLiveYouTubeStream = true;
+                logger.info(`YouTube video is live: ${title || videoSource}.`);
+                const liveStreamUrl = await youtube.getLiveStreamUrl(videoSource);
+                if (liveStreamUrl) {
+                    inputForFfmpeg = liveStreamUrl;
+                    logger.info(`Using direct live stream URL for ffmpeg: ${liveStreamUrl}`);
+                } else {
+                    logger.error(`Failed to get live stream URL for ${title || videoSource}. Falling back to download attempt or error.`);
+                    await sendError(message, `Failed to get live stream URL for \`${title || 'YouTube live video'}\`.`);
+                    await cleanupStreamStatus();
+                    return;
+                }
+            } else {
+                downloadInProgressMessage = await message.reply(`📥 Downloading \`${title || 'YouTube video'}\`...`).catch(e => {
+                    logger.warn("Failed to send 'Downloading...' message:", e);
+                    return null;
+                });
+                logger.info(`Downloading YouTube link with yt-dlp to temp file: ${videoSource}`);
+                
+                const ytDlpDownloadOptions: Parameters<typeof downloadToTempFile>[1] = {
+                    format: `bestvideo[height<=${streamOpts.height || 720}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=${streamOpts.height || 720}]+bestaudio/best[height<=${streamOpts.height || 720}]/best`,
+                    noPlaylist: true,
+                };
+                
+                try {
+                    tempFilePath = await downloadToTempFile(videoSource, ytDlpDownloadOptions);
+                    inputForFfmpeg = tempFilePath;
+                    logger.info(`Using temp file for ffmpeg: ${tempFilePath}`);
+                    if (downloadInProgressMessage) {
+                        await downloadInProgressMessage.delete().catch(e => logger.warn("Failed to delete 'Downloading...' message:", e));
+                    }
+                } catch (downloadError) {
+                    logger.error("Failed to download YouTube video:", downloadError);
+                    if (downloadInProgressMessage) {
+                        await downloadInProgressMessage.edit(`❌ Failed to download \`${title || 'YouTube video'}\`.`).catch(e => logger.warn("Failed to edit 'Downloading...' message:", e));
+                    } else {
+                        await sendError(message, `Failed to download video: ${downloadError instanceof Error ? downloadError.message : String(downloadError)}`);
+                    }
+                    await cleanupStreamStatus();
+                    return;
+                }
+            }
+        }
+        
+        await streamer.joinVoice(guildId, channelId);
+        streamStatus.joined = true;
+        streamStatus.playing = true;
+        streamStatus.channelInfo = { guildId, channelId, cmdChannelId };
+
         if (title) {
             streamer.client.user?.setActivity(status_watch(title) as ActivityOptions);
         }
+        await sendPlaying(message, title || videoSource);
 
-        // Abort any existing controller
         controller?.abort();
         controller = new AbortController();
 
-        const { command, output } = prepareStream(video, streamOpts, controller.signal);
+        const { command, output: ffmpegOutput } = prepareStream(inputForFfmpeg, streamOpts, controller.signal);
 
-        command.on("error", (err) => {
-            logger.error("An error happened with ffmpeg", err);
+        command.on("error", (err, stdout, stderr) => {
+            logger.error("An error happened with ffmpeg:", err.message);
+            if (stdout) logger.error("ffmpeg stdout:", stdout);
+            if (stderr) logger.error("ffmpeg stderr:", stderr);
+            if (!controller.signal.aborted) controller.abort();
+        });
+        
+        command.on("end", (stdout, stderr) => {
+            logger.info(`ffmpeg processing finished successfully for ${title || videoSource}.`);
         });
 
-        await playStream(output, streamer, undefined, controller.signal)
-            .catch(() => controller.abort());
+        await playStream(ffmpegOutput, streamer, undefined, controller.signal)
+            .catch((err) => {
+                if (!controller.signal.aborted) {
+                    logger.error('playStream error:', err);
+                }
+                if (!controller.signal.aborted) controller.abort();
+            });
 
-        logger.info(`Finished playing video: ${video}`);
+        if (!controller.signal.aborted) {
+            logger.info(`Finished playing: ${title || videoSource}`);
+        }
+
     } catch (error) {
-        logger.error("Error occurred while playing video:", error);
-        controller?.abort();
+        logger.error(`Error in playVideo for ${title || videoSource}:`, error);
+        if (!controller.signal.aborted) controller?.abort();
     } finally {
         await cleanupStreamStatus();
-        if (!streamStatus.manualStop) {
+        if (tempFilePath && !isLiveYouTubeStream) {
+            try {
+                logger.info(`Attempting to delete temp file: ${tempFilePath}`);
+                fs.unlinkSync(tempFilePath);
+                logger.info(`Successfully deleted temp file: ${tempFilePath}`);
+            } catch (cleanupError) {
+                logger.error(`Failed to delete temp file ${tempFilePath}:`, cleanupError);
+            }
+        }
+        if (!streamStatus.manualStop && !controller.signal.aborted) {
             await sendFinishMessage();
         }
     }
 }
 
-// Function to cleanup stream status - updated
+// Function to cleanup stream status
 async function cleanupStreamStatus() {
     if (streamStatus.manualStop) {
         return;
@@ -521,16 +602,6 @@ async function getTwitchStreamUrl(url: string): Promise<string | null> {
         logger.error("Failed to get Twitch stream URL:", error);
         return null;
     }
-}
-
-// Function to get video URL from YouTube
-async function getVideoUrl(videoUrl: string): Promise<string | null> {
-    return await youtube.getVideoUrl(videoUrl);
-}
-
-// Function to play video from YouTube
-async function ytPlayTitle(title: string): Promise<string | null> {
-    return await youtube.searchAndPlay(title);
 }
 
 // Function to search for videos on YouTube
