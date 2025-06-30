@@ -4,7 +4,7 @@
         "version": "PTDL_v2",
         "update_url": null
     },
-    "exported_at": "2025-06-30T08:56:00+03:00",
+    "exported_at": "2025-06-30T09:36:07+03:00",
     "name": "StreamBot",
     "author": "ysdragon@protonmail.com",
     "description": "A self bot to stream videos to Discord.",
@@ -15,14 +15,14 @@
     "file_denylist": [],
     "startup": "if [[ -d .git ]] && [[ {{AUTO_UPDATE}} == \"1\" ]]; then git pull; fi; if [ -f \/home\/container\/package.json ]; then bun install; fi; bun run start",
     "config": {
-        "files": "{}",
+        "files": "{\r\n    \".env\": {\r\n        \"parser\": \"file\",\r\n        \"find\": {\r\n            \"TOKEN\": \"TOKEN= \\\"{{env.TOKEN}}\\\"\"\r\n        }\r\n    }\r\n}",
         "startup": "{\r\n    \"done\": [\r\n        \"change this text 1\",\r\n        \"change this text 2\"\r\n    ]\r\n}",
         "logs": "{}",
         "stop": "^^C"
     },
     "scripts": {
         "installation": {
-            "script": "#!\/bin\/bash\r\n# Bun App Installation Script\r\n#\r\n# Server Files: \/mnt\/server\r\napt update\r\napt install -qq -y git curl jq file unzip make gcc g++ python3 python3-dev libtool ffmpeg\r\nmkdir -p \/mnt\/server\r\ncd \/mnt\/server\r\n\r\n\r\nmkdir -p \/mnt\/server\r\ncd \/mnt\/server\r\n\r\nGIT_ADDRESS=\"https:\/\/github.com\/ysdragon\/StreamBot.git\"\r\n\r\n## pull git js bot repo\r\nif [ \"$(ls -A \/mnt\/server)\" ]; then\r\n    echo -e \"\/mnt\/server directory is not empty.\"\r\n    if [ -d .git ]; then\r\n        echo -e \".git directory exists\"\r\n        if [ -f .git\/config ]; then\r\n            echo -e \"loading info from git config\"\r\n            ORIGIN=$(git config --get remote.origin.url)\r\n        else\r\n            echo -e \"files found with no git config\"\r\n            echo -e \"closing out without touching things to not break anything\"\r\n            exit 10\r\n        fi\r\n    fi\r\n\r\n    if [ \"${ORIGIN}\" == \"${GIT_ADDRESS}\" ]; then\r\n        echo \"pulling latest from github\"\r\n        git pull\r\n    fi\r\nelse\r\n    echo -e \"\/mnt\/server is empty.\\ncloning files into repo\"\r\n    if [ -z ${BOT_VERSION} ]; then\r\n        echo -e \"cloning default branch\"\r\n        git clone ${GIT_ADDRESS} .\r\n    else\r\n        echo -e \"cloning ${BOT_VERSION}'\"\r\n        git clone --single-branch --branch v${BOT_VERSION} ${GIT_ADDRESS} .\r\n    fi\r\nfi\r\n\r\nif [ -f \/mnt\/server\/package.json ]; then\r\n    bun install\r\nfi\r\n\r\n## install end\r\necho \"-----------------------------------------\"\r\necho \"Installation completed...\"\r\necho \"-----------------------------------------\"",
+            "script": "#!\/bin\/bash\r\n# Bun App Installation Script\r\n#\r\n# Server Files: \/mnt\/server\r\n\r\n# Define color codes\r\ndeclare -A colors=(\r\n    [\"GREEN\"]='\\033[0;32m'\r\n    [\"YELLOW\"]='\\033[0;33m'\r\n    [\"NC\"]='\\033[0m'\r\n)\r\n\r\n# Logger function\r\nlog() {\r\n    local level=$1\r\n    local message=$2\r\n    local color=${colors[$3]}\r\n    \r\n    if [ -z \"$color\" ]; then\r\n        color=${colors[NC]}\r\n    fi\r\n    \r\n    printf \"${color}[$level]${colors[NC]} $message\\n\"\r\n}\r\n\r\nlog \"INFO\" \"Installing deps...\" \"GREEN\"\r\napt update\r\napt install -qq -y git curl jq file unzip make gcc g++ python3 python3-dev libtool ffmpeg\r\nmkdir -p \/mnt\/server\r\ncd \/mnt\/server\r\n\r\n\r\nmkdir -p \/mnt\/server\r\ncd \/mnt\/server\r\n\r\nGIT_ADDRESS=\"https:\/\/github.com\/ysdragon\/StreamBot.git\"\r\n\r\n## pull git js bot repo\r\nif [ \"$(ls -A \/mnt\/server)\" ]; then\r\n    log \"INFO\" \"\/mnt\/server directory is not empty.\" \"GREEN\"\r\n    if [ -d .git ]; then\r\n        log \"INFO\" \".git directory exists\" \"GREEN\"\r\n        if [ -f .git\/config ]; then\r\n            log \"INFO\" \"loading info from git config\" \"GREEN\"\r\n            ORIGIN=$(git config --get remote.origin.url)\r\n        else\r\n            exit 10\r\n        fi\r\n    fi\r\n\r\n    if [ \"${ORIGIN}\" == \"${GIT_ADDRESS}\" ]; then\r\n        log \"INFO\" \"Updating from GitHub...\" \"GREEN\"\r\n        git pull\r\n    fi\r\nelse\r\n    if [ -z ${BOT_VERSION} ]; then\r\n        log \"INFO\" \"Installing default branch (main)...\" \"GREEN\"\r\n        git clone ${GIT_ADDRESS} .\r\n    else\r\n        log \"INFO\" \"Installing version ${BOT_VERSION}\" \"GREEN\"\r\n        git clone --single-branch --branch v${BOT_VERSION} ${GIT_ADDRESS} .\r\n    fi\r\nfi\r\n\r\n# Copy .env.example to .env\r\ncp .env.example .env\r\n\r\nlog \"INFO\" \"Installation completed!\" \"GREEN\"\r\n\r\nexit 0",
             "container": "ghcr.io\/parkervcp\/installers:debian",
             "entrypoint": "bash"
         }
@@ -46,6 +46,16 @@
             "user_viewable": true,
             "user_editable": true,
             "rules": "nullable|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Bot Token",
+            "description": "Your real user token for the bot.\r\nhttps:\/\/github.com\/ysdragon\/StreamBot\/wiki\/Get-Discord-user-token",
+            "env_variable": "TOKEN",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:100",
             "field_type": "text"
         }
     ]
