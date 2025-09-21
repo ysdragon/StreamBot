@@ -178,9 +178,6 @@ streamer.client.on('messageCreate', async (message) => {
                     // Log playing video
                     logger.info(`Playing local video: ${video.path}`);
 
-                    // Send playing message
-                    sendPlaying(message, videoname || "Local Video");
-
                     // Play video
                     playVideo(message, video.path, videoname);
                 }
@@ -222,14 +219,12 @@ streamer.client.on('messageCreate', async (message) => {
                                 const twitchId = link.split('/').pop() as string;
                                 const twitchUrl = await getTwitchStreamUrl(link);
                                 if (twitchUrl) {
-                                    sendPlaying(message, `${twitchId}'s Twitch Stream`);
                                     playVideo(message, twitchUrl, `twitch.tv/${twitchId}`);
                                 }
                             }
                             break;
                         default:
                             {
-                                sendPlaying(message, "URL");
                                 playVideo(message, link, "URL");
                             }
                     }
@@ -502,13 +497,16 @@ async function playVideo(message: Message, videoSource: string, title?: string) 
         controller?.abort();
         controller = new AbortController();
 
+        if (!controller) {
+            throw new Error('Controller is not initialized');
+        }
         const { command, output: ffmpegOutput } = prepareStream(inputForFfmpeg, streamOpts, controller.signal);
 
         command.on("error", (err, stdout, stderr) => {
             logger.error("An error happened with ffmpeg:", err.message);
             if (stdout) logger.error("ffmpeg stdout:", stdout);
             if (stderr) logger.error("ffmpeg stderr:", stderr);
-            if (!controller.signal.aborted) controller.abort();
+            if (controller && !controller.signal.aborted) controller.abort();
         });
         
         command.on("end", (stdout, stderr) => {
@@ -517,21 +515,21 @@ async function playVideo(message: Message, videoSource: string, title?: string) 
 
         await playStream(ffmpegOutput, streamer, undefined, controller.signal)
             .catch((err) => {
-                if (!controller.signal.aborted) {
+                if (controller && !controller.signal.aborted) {
                     logger.error('playStream error:', err);
                 }
-                if (!controller.signal.aborted) controller.abort();
+                if (controller && !controller.signal.aborted) controller.abort();
             });
 
-        if (!controller.signal.aborted) {
+        if (controller && !controller.signal.aborted) {
             logger.info(`Finished playing: ${title || videoSource}`);
         }
 
     } catch (error) {
         logger.error(`Error in playVideo for ${title || videoSource}:`, error);
-        if (!controller.signal.aborted) controller?.abort();
+        if (controller && !controller.signal.aborted) controller.abort();
     } finally {
-        if (!streamStatus.manualStop && !controller.signal.aborted) {
+        if (!streamStatus.manualStop && controller && !controller.signal.aborted) {
             await sendFinishMessage();
         }
 
