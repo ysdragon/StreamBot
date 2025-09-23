@@ -6,7 +6,7 @@ import crypto from "node:crypto";
 import got from "got";
 import { YTFlags } from "../@types/index.js";
 import logger from "./logger.js";
-import { spawn } from "bun";
+import { spawn } from "node:child_process";
 
 let determinedFilename: string;
 const platform = process.platform;
@@ -90,7 +90,7 @@ export async function downloadExecutable() {
 }
 
 export function exec(url: string, options: Partial<YTFlags> = {}, spawnOptions: Record<string, any> = {}) {
-    return spawn([exePath, ...args(url, options)], {
+    return spawn(exePath, args(url, options), {
         windowsHide: true,
         ...spawnOptions,
         stdio: ["ignore", "pipe", "pipe"]
@@ -98,41 +98,34 @@ export function exec(url: string, options: Partial<YTFlags> = {}, spawnOptions: 
 }
 
 export default async function ytdl(url: string, options: Partial<YTFlags> = {}, spawnOptions: Record<string, any> = {}) {
-    let data = "";
-    let errorData = "";
+    return new Promise((resolve, reject) => {
+        let data = "";
+        let errorData = "";
 
-    const proc = exec(url, options, spawnOptions);
+        const proc = exec(url, options, spawnOptions);
 
-    if (proc.stdout) {
-        const reader = proc.stdout.getReader();
-        const decoder = new TextDecoder();
-        let result = await reader.read();
-        while (!result.done) {
-            data += decoder.decode(result.value, { stream: true });
-            result = await reader.read();
-        }
-        data += decoder.decode();
-    }
+        proc.stdout?.on('data', (chunk) => {
+            data += chunk.toString();
+        });
 
-    if (proc.stderr) {
-        const reader = proc.stderr.getReader();
-        const decoder = new TextDecoder();
-        let result = await reader.read();
-        while (!result.done) {
-            errorData += decoder.decode(result.value, { stream: true });
-            result = await reader.read();
-        }
-        errorData += decoder.decode();
-    }
+        proc.stderr?.on('data', (chunk) => {
+            errorData += chunk.toString();
+        });
 
-    const exitCode = await proc.exited;
+        proc.on('close', (exitCode) => {
+            if (exitCode !== 0) {
+                logger.error(`yt-dlp process exited with code ${exitCode}. Stderr: ${errorData}`);
+                reject(new Error(`yt-dlp failed with exit code ${exitCode}: ${errorData || data}`));
+            } else {
+                resolve(json(data));
+            }
+        });
 
-    if (exitCode !== 0) {
-        logger.error(`yt-dlp process exited with code ${exitCode}. Stderr: ${errorData}`);
-        throw new Error(`yt-dlp failed with exit code ${exitCode}: ${errorData || data}`);
-    }
-
-    return json(data);
+        proc.on('error', (error) => {
+            logger.error(`yt-dlp process error:`, error);
+            reject(error);
+        });
+    });
 }
 
 export async function downloadToTempFile(url: string, options: Partial<YTFlags> = {}): Promise<string> {
@@ -149,24 +142,20 @@ export async function downloadToTempFile(url: string, options: Partial<YTFlags> 
         noWarnings: true,
     };
 
-    const proc = spawn([exePath, ...args(url, downloadOptions)], {
+    const proc = spawn(exePath, args(url, downloadOptions), {
         windowsHide: true,
         stdio: ["ignore", "ignore", "pipe"]
     });
 
     let errorData = "";
-    if (proc.stderr) {
-        const reader = proc.stderr.getReader();
-        const decoder = new TextDecoder();
-        let result = await reader.read();
-        while (!result.done) {
-            errorData += decoder.decode(result.value, { stream: true });
-            result = await reader.read();
-        }
-        errorData += decoder.decode();
-    }
+    proc.stderr?.on('data', (chunk) => {
+        errorData += chunk.toString();
+    });
 
-    const exitCode = await proc.exited;
+    const exitCode = await new Promise<number>((resolve) => {
+        proc.on('close', (code) => resolve(code || 0));
+        proc.on('error', () => resolve(1));
+    });
 
     if (exitCode !== 0) {
         if (existsSync(tempFilePath)) {
@@ -194,36 +183,25 @@ export async function downloadToTempFile(url: string, options: Partial<YTFlags> 
 export async function checkForUpdatesAndUpdate(): Promise<void> {
     try {
         await downloadExecutable();
-        const updateProc = spawn([exePath, "--update"], {
+        const updateProc = spawn(exePath, ["--update"], {
             stdio: ["ignore", "pipe", "pipe"],
         });
 
         let stdoutData = "";
         let stderrData = "";
 
-        if (updateProc.stdout) {
-            const stdoutReader = updateProc.stdout.getReader();
-            const decoder = new TextDecoder();
-            let result = await stdoutReader.read();
-            while (!result.done) {
-                stdoutData += decoder.decode(result.value, { stream: true });
-                result = await stdoutReader.read();
-            }
-            stdoutData += decoder.decode();
-        }
+        updateProc.stdout?.on('data', (chunk) => {
+            stdoutData += chunk.toString();
+        });
 
-        if (updateProc.stderr) {
-            const stderrReader = updateProc.stderr.getReader();
-            const decoder = new TextDecoder();
-            let result = await stderrReader.read();
-            while (!result.done) {
-                stderrData += decoder.decode(result.value, { stream: true });
-                result = await stderrReader.read();
-            }
-            stderrData += decoder.decode();
-        }
+        updateProc.stderr?.on('data', (chunk) => {
+            stderrData += chunk.toString();
+        });
 
-        const exitCode = await updateProc.exited;
+        const exitCode = await new Promise<number>((resolve) => {
+            updateProc.on('close', (code) => resolve(code || 0));
+            updateProc.on('error', () => resolve(1));
+        });
 
         if (exitCode === 0) {
             if (stdoutData.includes("Updated yt-dlp to")) {
