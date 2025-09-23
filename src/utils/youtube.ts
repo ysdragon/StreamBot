@@ -1,12 +1,12 @@
 import ytdl_dlp from './yt-dlp.js';
 import logger from './logger.js';
 import yts from 'play-dl';
-import { YouTubeVideo } from '../@types/index.js';
+import { YouTubeVideo, YTResponse } from '../@types/index.js';
 
 export class Youtube {
     async getVideoInfo(url: string): Promise<YouTubeVideo | null> {
         try {
-            const videoData = await ytdl_dlp(url, { dumpSingleJson: true, noPlaylist: true });
+            const videoData = await ytdl_dlp(url, { dumpSingleJson: true, noPlaylist: true }) as YTResponse;
 
             if (typeof videoData === 'object' && videoData !== null && videoData.id && videoData.title) {
                 return {
@@ -14,7 +14,7 @@ export class Youtube {
                     title: videoData.title,
                     formats: [],
                     videoDetails: {
-                        isLiveContent: videoData.is_live === true || videoData.live_status === 'is_live'
+                        isLiveContent: videoData.is_live === true || (videoData as any).live_status === 'is_live'
                     }
                 };
             }
