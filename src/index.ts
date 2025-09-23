@@ -457,7 +457,7 @@ async function playVideo(message: Message, videoSource: string, title?: string) 
                     logger.warn("Failed to send 'Downloading...' message:", e);
                     return null;
                 });
-                logger.info(`Downloading YouTube link with yt-dlp to temp file: ${videoSource}`);
+                logger.info(`Downloading ${title || videoSource}...`);
                 
                 const ytDlpDownloadOptions: Parameters<typeof downloadToTempFile>[1] = {
                     format: `bestvideo[height<=${streamOpts.height || 720}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=${streamOpts.height || 720}]+bestaudio/best[height<=${streamOpts.height || 720}]/best`,
