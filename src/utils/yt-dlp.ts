@@ -176,7 +176,6 @@ export async function downloadToTempFile(url: string, options: Partial<YTFlags> 
         throw new Error(errorMessage);
     }
     
-    logger.info(`yt-dlp successfully downloaded to temp file: ${tempFilePath}`);
     return tempFilePath;
 }
 

@@ -425,7 +425,6 @@ streamer.client.on('messageCreate', async (message) => {
 
 // Function to play video
 async function playVideo(message: Message, videoSource: string, title?: string) {
-	logger.info(`Attempting to play: ${title || videoSource}`);
 	const [guildId, channelId, cmdChannelId] = [config.guildId, config.videoChannelId, config.cmdChannelId!];
 
 	streamStatus.manualStop = false;
@@ -467,7 +466,7 @@ async function playVideo(message: Message, videoSource: string, title?: string) 
 				try {
 					tempFilePath = await downloadToTempFile(videoSource, ytDlpDownloadOptions);
 					inputForFfmpeg = tempFilePath;
-					logger.info(`Using temp file for ffmpeg: ${tempFilePath}`);
+					logger.info(`Playing ${title || videoSource}...`);
 					if (downloadInProgressMessage) {
 						await downloadInProgressMessage.delete().catch(e => logger.warn("Failed to delete 'Downloading...' message:", e));
 					}
@@ -516,10 +515,6 @@ async function playVideo(message: Message, videoSource: string, title?: string) 
 			}
 		});
 
-		command.on("end", (stdout, stderr) => {
-			logger.info(`ffmpeg processing finished successfully for ${title || videoSource}.`);
-		});
-
 		await playStream(ffmpegOutput, streamer, undefined, controller.signal)
 			.catch((err) => {
 				if (controller && !controller.signal.aborted) {
@@ -544,9 +539,7 @@ async function playVideo(message: Message, videoSource: string, title?: string) 
 
 		if (tempFilePath && !isLiveYouTubeStream) {
 			try {
-				logger.info(`Attempting to delete temp file: ${tempFilePath}`);
 				fs.unlinkSync(tempFilePath);
-				logger.info(`Successfully deleted temp file: ${tempFilePath}`);
 			} catch (cleanupError) {
 				logger.error(`Failed to delete temp file ${tempFilePath}:`, cleanupError);
 			}
