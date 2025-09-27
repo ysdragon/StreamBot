@@ -212,12 +212,56 @@ function showInfoToast(message, title = 'Info', duration = null) {
 }
 
 function copyFileName(name) {
-	navigator.clipboard.writeText(name).then(() => {
-		showSuccessToast(name + " copied to clipboard!", "Copied!");
-	}).catch(err => {
-		console.error('Failed to copy text: ', err);
+	// Try modern clipboard API first
+	if (navigator.clipboard && window.isSecureContext) {
+		navigator.clipboard.writeText(name).then(() => {
+			showSuccessToast(name + " copied to clipboard!", "Copied!");
+		}).catch(async err => {
+			console.error('Failed to copy text: ', err);
+			await fallbackCopyTextToClipboard(name);
+		});
+	} else {
+		fallbackCopyTextToClipboard(name);
+	}
+}
+
+async function fallbackCopyTextToClipboard(text) {
+	const textArea = document.createElement("textarea");
+	textArea.value = text;
+
+	// Avoid scrolling to bottom
+	textArea.style.top = "0";
+	textArea.style.left = "0";
+	textArea.style.position = "fixed";
+	textArea.style.opacity = "0";
+
+	document.body.appendChild(textArea);
+	textArea.focus();
+	textArea.select();
+
+	try {
+		// Use modern clipboard API if available, even in fallback
+		if (navigator.clipboard && window.isSecureContext) {
+			await navigator.clipboard.writeText(text);
+			showSuccessToast(text + " copied to clipboard!", "Copied!");
+		} else {
+			// Final fallback: select and inform user to copy manually
+			const selection = window.getSelection();
+			const range = document.createRange();
+			range.selectNodeContents(textArea);
+			selection.removeAllRanges();
+			selection.addRange(range);
+			textArea.setSelectionRange(0, text.length);
+
+			// Show info message that user needs to manually copy
+			showInfoToast("Text selected - please copy manually (Ctrl+C or Cmd+C)", "Manual Copy");
+		}
+	} catch (err) {
+		console.error('Fallback: Could not copy text: ', err);
 		showErrorToast("Failed to copy to clipboard", "Copy Error");
-	});
+	}
+
+	document.body.removeChild(textArea);
 }
 
 
@@ -339,7 +383,6 @@ function validateVideoFile(file) {
 
 
 document.addEventListener('DOMContentLoaded', function () {
-	initLazyLoading();
 	initFormLoadingStates();
 
 	
@@ -450,19 +493,25 @@ function startLocalUpload() {
 	});
 
 	localUploadXHR.addEventListener('load', function () {
-		if (localUploadXHR.status === 200) {
-			const response = JSON.parse(localUploadXHR.responseText);
-			progressBar.classList.remove('progress-bar-animated', 'progress-bar-striped');
-			progressBar.classList.add('bg-success');
-			progressText.textContent = '100%';
-			progressStatus.textContent = 'Upload completed successfully!';
+		try {
+			if (localUploadXHR.status === 200) {
+				const response = JSON.parse(localUploadXHR.responseText);
+				progressBar.classList.remove('progress-bar-animated', 'progress-bar-striped');
+				progressBar.classList.add('bg-success');
+				progressText.textContent = '100%';
+				progressStatus.textContent = 'Upload completed successfully!';
 
-			showSuccessToast('File uploaded successfully!', 'Upload Complete');
-			setTimeout(() => {
-				window.location.reload();
-			}, 2000);
-		} else {
-			showErrorToast('Upload failed. Please try again.', 'Upload Error');
+				showSuccessToast('File uploaded successfully!', 'Upload Complete');
+				setTimeout(() => {
+					window.location.reload();
+				}, 2000);
+			} else {
+				showErrorToast('Upload failed. Please try again.', 'Upload Error');
+				resetLocalUpload();
+			}
+		} catch (error) {
+			console.error('Error processing upload response:', error);
+			showErrorToast('Upload failed due to processing error.', 'Upload Error');
 			resetLocalUpload();
 		}
 	});
@@ -479,6 +528,10 @@ function startLocalUpload() {
 function cancelLocalUpload() {
 	if (localUploadXHR) {
 		localUploadXHR.abort();
+		// Clean up event listeners to prevent memory leaks
+		localUploadXHR.onload = null;
+		localUploadXHR.onerror = null;
+		localUploadXHR.upload.onprogress = null;
 	}
 	resetLocalUpload();
 	showInfoToast('Upload cancelled', 'Upload Cancelled');
@@ -548,20 +601,26 @@ function startRemoteUpload() {
 	remoteUploadXHR.addEventListener('load', function () {
 		clearInterval(progressInterval);
 
-		if (remoteUploadXHR.status === 200) {
-			const response = JSON.parse(remoteUploadXHR.responseText);
-			progressBar.classList.remove('progress-bar-animated', 'progress-bar-striped');
-			progressBar.classList.add('bg-success');
-			progressBar.style.width = '100%';
-			progressText.textContent = '100%';
-			progressStatus.textContent = 'Download completed successfully!';
+		try {
+			if (remoteUploadXHR.status === 200) {
+				const response = JSON.parse(remoteUploadXHR.responseText);
+				progressBar.classList.remove('progress-bar-animated', 'progress-bar-striped');
+				progressBar.classList.add('bg-success');
+				progressBar.style.width = '100%';
+				progressText.textContent = '100%';
+				progressStatus.textContent = 'Download completed successfully!';
 
-			showSuccessToast('Remote file downloaded successfully!', 'Download Complete');
-			setTimeout(() => {
-				window.location.reload();
-			}, 2000);
-		} else {
-			showErrorToast('Download failed. Please check the URL.', 'Download Error');
+				showSuccessToast('Remote file downloaded successfully!', 'Download Complete');
+				setTimeout(() => {
+					window.location.reload();
+				}, 2000);
+			} else {
+				showErrorToast('Download failed. Please check the URL.', 'Download Error');
+				resetRemoteUpload();
+			}
+		} catch (error) {
+			console.error('Error processing download response:', error);
+			showErrorToast('Download failed due to processing error.', 'Download Error');
 			resetRemoteUpload();
 		}
 	});
@@ -579,6 +638,9 @@ function startRemoteUpload() {
 function cancelRemoteUpload() {
 	if (remoteUploadXHR) {
 		remoteUploadXHR.abort();
+		// Clean up event listeners to prevent memory leaks
+		remoteUploadXHR.onload = null;
+		remoteUploadXHR.onerror = null;
 	}
 	resetRemoteUpload();
 	showInfoToast('Download cancelled', 'Download Cancelled');
