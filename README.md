@@ -17,7 +17,7 @@
 - 🎬 **YouTube Integration**: Stream YouTube videos
 - 🔗 **YouTube Live Streams**: Direct streaming support for YouTube live content
 - 🌐 **Twitch Support**: Stream Twitch live streams and video-on-demand (VODs)
-- 🔗 **Direct URL Streaming**: Stream from arbitrary video file URLs and live streams
+- 🔗 **Direct URL Streaming**: Stream from any URL supported by yt-dlp (thousands of video sites including Vimeo, Dailymotion, Facebook, Instagram, news sites, and more)
 - 🎵 **Queue System**: Queue multiple videos with auto-play and skip functionality
 - 🌐 **Web Management Interface**: Full-featured web dashboard for video library management
 - 📤 **Video Upload**: Upload videos through the web interface
@@ -67,7 +67,7 @@ bun run start:node
 StreamBot supports multiple video sources:
 
 - **Local Videos**: Store videos in your `VIDEOS_DIR` folder and use `play <filename>`
-- **Smart Play**: Use `play <input>` for automatic detection and streaming (local file, URL, YouTube video, or Twitch stream)
+- **Smart Play**: Use `play <input>` for automatic detection and streaming (local file, YouTube video, Twitch stream, or any URL supported by yt-dlp)
 - **YouTube Search**: Use `ytsearch <query>` to search YouTube and display results (use `play` with search results to stream)
 - **Live Streams**: Full support for YouTube Live streams and Twitch live content
 - **Video Queue**: All playback goes through a queue system - videos are added to queue and played sequentially
