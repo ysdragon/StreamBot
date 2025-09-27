@@ -6,6 +6,7 @@ export default class StopCommand extends BaseCommand {
  	name = "stop";
  	description = "Stop current video playback and clear queue";
  	usage = "stop";
+	aliases = ["leave", "s"];
 
 	async execute(context: CommandContext): Promise<void> {
 		if (!context.streamStatus.joined) {

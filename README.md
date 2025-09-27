@@ -116,7 +116,7 @@ docker compose -f docker-compose-warp.yml up -d
 |---------|-------------|---------|
 | `play <input>` | Smart play: local video, URL, or YouTube search | |
 | `ytsearch <query>` | Search YouTube and display results | |
-| `stop` | Stop current playback | |
+| `stop` | Stop current playback | `leave`, `s` |
 | `skip` | Skip to next video in queue | `next` |
 | `queue` | Display current video queue | |
 | `list` | Show local video library | |
