@@ -57,10 +57,9 @@ export class Youtube {
 		try {
 			const streamUrl = await ytdl_dlp(youtubePageUrl, {
 				getUrl: true,
-				format: 'best[protocol=m3u8_native]/best[protocol=http_dash_segments]/best',
+				format: 'best[protocol=https]/best[protocol=http]/best',
 				noPlaylist: true,
 				quiet: true,
-				noWarnings: true,
 			});
 
 			if (typeof streamUrl === 'string' && streamUrl.trim()) {

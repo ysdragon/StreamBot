@@ -20,12 +20,17 @@ export class MediaService {
 			if (url.includes('youtube.com/') || url.includes('youtu.be/')) {
 				const videoDetails = await this.youtube.getVideoInfo(url);
 				if (videoDetails) {
-					return {
-						url,
-						title: videoDetails.title,
-						type: 'youtube',
-						isLive: videoDetails.videoDetails?.isLiveContent || false
-					};
+					const isLive = videoDetails.videoDetails?.isLiveContent || false;
+					const streamUrl = isLive ? await this.youtube.getLiveStreamUrl(url) : url;
+
+					if (streamUrl) {
+						return {
+							url: streamUrl,
+							title: videoDetails.title,
+							type: 'youtube',
+							isLive: isLive,
+						};
+					}
 				}
 			}
 			// Check for Twitch
