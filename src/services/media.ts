@@ -16,68 +16,16 @@ export class MediaService {
 
 	public async resolveMediaSource(url: string): Promise<MediaSource | null> {
 		try {
-			// Check for YouTube
 			if (url.includes('youtube.com/') || url.includes('youtu.be/')) {
-				const videoDetails = await this.youtube.getVideoInfo(url);
-				if (videoDetails) {
-					const isLive = videoDetails.videoDetails?.isLiveContent || false;
-					const streamUrl = isLive ? await this.youtube.getLiveStreamUrl(url) : url;
-
-					if (streamUrl) {
-						return {
-							url: streamUrl,
-							title: videoDetails.title,
-							type: 'youtube',
-							isLive: isLive,
-						};
-					}
-				}
-			}
-			// Check for Twitch
-			else if (url.includes('twitch.tv')) {
-				const streamUrl = await this.getTwitchStreamUrl(url);
-				if (streamUrl) {
-					const twitchId = url.split('/').pop() as string;
-					return {
-						url: streamUrl,
-						title: `twitch.tv/${twitchId}`,
-						type: 'twitch'
-					};
-				}
-			}
-			// Check for Local File
-			else if (GeneralUtils.isLocalFile(url)) {
-				return {
-					url,
-					title: path.basename(url, path.extname(url)),
-					type: 'local'
-				};
-			}
-			// Fallback to Direct URL
-			else {
-				let title = "Direct URL";
-				try {
-					const urlObj = new URL(url);
-					const pathname = urlObj.pathname;
-					const filename = pathname.split('/').pop();
-
-					if (filename && filename.includes('.')) {
-						title = decodeURIComponent(filename.replace(/\.[^/.]+$/, ""));
-					} else if (pathname !== '/' && pathname.length > 1) {
-						const pathSegment = pathname.split('/').pop();
-						if (pathSegment) {
-							title = decodeURIComponent(pathSegment);
-						}
-					}
-				} catch (e) {
-					logger.debug("Could not parse URL for title extraction:", url);
-				}
-
-				return {
-					url,
-					title,
-					type: 'url'
-				};
+				return await this._resolveYouTubeSource(url);
+			} else if (url.includes('twitch.tv/')) {
+				return await this._resolveTwitchSource(url);
+			} else if (GeneralUtils.isLocalFile(url)) {
+				return this._resolveLocalSource(url);
+			} else if (GeneralUtils.isValidUrl(url)) {
+				return this._resolveDirectUrlSource(url);
+			} else {
+				return this.searchAndPlayYouTube(url);
 			}
 
 			return null;
@@ -85,6 +33,24 @@ export class MediaService {
 			logger.error("Failed to resolve media source:", error);
 			return null;
 		}
+	}
+
+	private async _resolveYouTubeSource(url: string): Promise<MediaSource | null> {
+		const videoDetails = await this.youtube.getVideoInfo(url);
+		if (!videoDetails) return null;
+
+		const isLive = videoDetails.videoDetails?.isLiveContent || false;
+		const streamUrl = isLive ? await this.youtube.getLiveStreamUrl(url) : url;
+
+		if (streamUrl) {
+			return {
+				url: streamUrl,
+				title: videoDetails.title,
+				type: 'youtube',
+				isLive: isLive,
+			};
+		}
+		return null;
 	}
 
 	public async getTwitchStreamUrl(url: string): Promise<string | null> {
@@ -128,6 +94,54 @@ export class MediaService {
 			logger.error("Failed to download YouTube video:", error);
 			return null;
 		}
+	
+	}
+
+	private async _resolveTwitchSource(url: string): Promise<MediaSource | null> {
+		const streamUrl = await this.getTwitchStreamUrl(url);
+		if (streamUrl) {
+			const twitchId = url.split('/').pop() as string;
+			return {
+				url: streamUrl,
+				title: `twitch.tv/${twitchId}`,
+				type: 'twitch'
+			};
+		}
+		return null;
+	}
+
+	private _resolveLocalSource(url: string): MediaSource {
+		return {
+			url,
+			title: path.basename(url, path.extname(url)),
+			type: 'local'
+		};
+	}
+
+	private _resolveDirectUrlSource(url: string): MediaSource {
+		let title = "Direct URL";
+		try {
+			const urlObj = new URL(url);
+			const pathname = urlObj.pathname;
+			const filename = pathname.split('/').pop();
+
+			if (filename && filename.includes('.')) {
+				title = decodeURIComponent(filename.replace(/\.[^/.]+$/, ""));
+			} else if (pathname !== '/' && pathname.length > 1) {
+				const pathSegment = pathname.split('/').pop();
+				if (pathSegment) {
+					title = decodeURIComponent(pathSegment);
+				}
+			}
+		} catch (e) {
+			logger.debug("Could not parse URL for title extraction:", url);
+		}
+
+		return {
+			url,
+			title,
+			type: 'url'
+		};
 	}
 
 	public async searchYouTube(query: string, limit: number = 5): Promise<string[]> {
