@@ -3,8 +3,9 @@ import { TwitchStream, MediaSource } from '../types/index.js';
 import config from "../config.js";
 import logger from '../utils/logger.js';
 import { Youtube } from '../utils/youtube.js';
-import { downloadToTempFile } from '../utils/yt-dlp.js';
+import ytdl, { downloadToTempFile } from '../utils/yt-dlp.js';
 import { GeneralUtils } from '../utils/shared.js';
+import { YTResponse } from '../types/index.js';
 import path from 'path';
 
 export class MediaService {
@@ -118,7 +119,48 @@ export class MediaService {
 		};
 	}
 
-	private _resolveDirectUrlSource(url: string): MediaSource {
+	private async _resolveDirectUrlSource(url: string): Promise<MediaSource> {
+		// First try to get metadata using yt-dlp
+		try {
+			const metadata = await ytdl(url, {
+				dumpJson: true,
+				skipDownload: true,
+				noWarnings: true,
+				quiet: true
+			}) as YTResponse;
+
+			// If yt-dlp succeeds, use the extracted metadata
+			if (metadata && metadata.title) {
+				// Get the best available format URL
+				let streamUrl = url;
+				if (metadata.formats && Array.isArray(metadata.formats) && metadata.formats.length > 0) {
+					// Find the format with both audio and video, preferring higher quality
+					const bestFormat = metadata.formats
+						.filter((format) => format.url && format.ext !== 'm3u8') // Avoid HLS streams
+						.sort((a, b) => {
+							// Prefer formats with both audio and video
+							const aScore = (a.vcodec && a.vcodec !== 'none' ? 1 : 0) + (a.acodec && a.acodec !== 'none' ? 1 : 0) + (a.height || 0) / 1000;
+							const bScore = (b.vcodec && b.vcodec !== 'none' ? 1 : 0) + (b.acodec && b.acodec !== 'none' ? 1 : 0) + (b.height || 0) / 1000;
+							return bScore - aScore;
+						})[0];
+
+					if (bestFormat && bestFormat.url) {
+						streamUrl = bestFormat.url;
+					}
+				}
+
+				return {
+					url: streamUrl,
+					title: metadata.title,
+					type: 'url'
+				};
+			}
+		} catch (error) {
+			// yt-dlp failed, log debug info and continue to fallback
+			logger.debug("yt-dlp failed to extract metadata for URL:", url, error);
+		}
+
+		// Fallback to original URL parsing logic
 		let title = "Direct URL";
 		try {
 			const urlObj = new URL(url);
