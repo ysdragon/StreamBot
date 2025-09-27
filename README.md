@@ -23,7 +23,7 @@
 - 📤 **Video Upload**: Upload videos through the web interface
 
 ## 📋 Requirements
-- [Bun](https://bun.sh/) `v1.1.39+` (recommended) or [Node.js](https://nodejs.org/) `v16+`
+- [Bun](https://bun.sh/) `v1.1.39+` (recommended) or [Node.js](https://nodejs.org/) `v21+`
 - [FFmpeg](https://www.ffmpeg.org/) _(in PATH or working directory)_
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) _(automatically downloaded/updated by the bot)_
 
