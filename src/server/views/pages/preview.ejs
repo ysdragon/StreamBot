@@ -1,0 +1,91 @@
+<div class="container-fluid py-4">
+	<h1 class="h3 mb-4">File Preview</h1>
+	<h2 class="h5 mb-4"><%= filename %></h2>
+	<div class="row">
+		<div class="col-lg-4 mb-4">
+			<div class="card">
+				<div class="card-header">
+					<h3 class="h5 mb-0">Metadata</h3>
+				</div>
+				<div class="card-body p-0">
+					<div class="table-responsive">
+						<table class="table table-striped table-sm mb-0">
+							<tbody>
+								<% if (typeof metadata !== 'undefined' && metadata.format) { %>
+									<% Object.entries(metadata.format).forEach(function([key, value]) { %>
+									<tr>
+										<td class="fw-bold"><%= key %></td>
+										<td><%- stringify(value) %></td>
+									</tr>
+									<% }); %>
+								<% } %>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-lg-8">
+			<div class="card">
+				<div class="card-header">
+					<h3 class="h5 mb-0">Preview</h3>
+				</div>
+				<div class="card-body p-0">
+					<div id="imageSlider" class="carousel slide" data-bs-ride="carousel">
+						<div class="carousel-inner">
+							<% if (typeof previews !== 'undefined' && previews.length > 0) { %>
+								<% previews.forEach(function(preview, index) { %>
+								<div class="carousel-item <%= index === 0 ? 'active' : '' %>" data-preview-url="<%= preview %>">
+									<div class="image-container" data-image-index="<%= index %>">
+										<img src="<%= preview %>" class="d-block w-100 preview-image" alt="Preview <%= index + 1 %>" loading="<%= index < 2 ? 'eager' : 'lazy' %>" style="display: none;">
+										<div class="image-loading d-none">
+											<div class="d-flex flex-column align-items-center justify-content-center h-100">
+												<div class="spinner-border text-primary mb-3" role="status">
+													<span class="visually-hidden">Generating preview...</span>
+												</div>
+												<div class="text-center">
+													<small class="text-muted">Generating preview image <%= index + 1 %>...</small>
+												</div>
+											</div>
+										</div>
+										<div class="image-error d-none">
+											<div class="d-flex flex-column align-items-center justify-content-center h-100">
+												<i class="fas fa-exclamation-triangle text-warning fa-3x mb-3" aria-hidden="true"></i>
+												<div class="text-center mb-3">
+													<small class="text-muted">Failed to load preview <%= index + 1 %></small>
+												</div>
+												<button class="btn btn-sm btn-outline-primary" onclick="previewImageManager.retryLoad(this.closest('.image-container'))">
+													<i class="fas fa-redo me-1" aria-hidden="true"></i>Retry
+												</button>
+											</div>
+										</div>
+									</div>
+								</div>
+								<% }); %>
+							<% } else { %>
+								<div class="carousel-item active">
+									<div class="d-flex align-items-center justify-content-center" style="height: 400px; background-color: #000; color: #fff;">
+										<span>No preview available</span>
+									</div>
+								</div>
+							<% } %>
+						</div>
+						<% if (typeof previews !== 'undefined' && previews.length > 1) { %>
+						<button class="carousel-control-prev" type="button" data-bs-target="#imageSlider" data-bs-slide="prev">
+							<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+							<span class="visually-hidden">Previous</span>
+						</button>
+						<button class="carousel-control-next" type="button" data-bs-target="#imageSlider" data-bs-slide="next">
+							<span class="carousel-control-next-icon" aria-hidden="true"></span>
+							<span class="visually-hidden">Next</span>
+						</button>
+						<% } %>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="mt-4">
+		<a href="/" class="btn btn-primary">Back to File List</a>
+	</div>
+</div>

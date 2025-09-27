@@ -1,7 +1,7 @@
 import dotenv from "dotenv"
 import bcrypt from "bcrypt";
 
-dotenv.config()
+dotenv.config({quiet: true});
 
 const VALID_VIDEO_CODECS = ['VP8', 'H264', 'H265', 'VP9', 'AV1'];
 

@@ -1,0 +1,45 @@
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center py-5 login-bg">
+	<div class="card shadow-lg login-card" style="max-width: 400px; width: 100%;">
+		<div class="card-body p-5">
+			<div class="text-center mb-4">
+				<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-camera-reels text-primary login-logo" viewBox="0 0 16 16">
+					<path d="M6 3a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM1 3a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/>
+					<path d="M9 6h.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 7.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 16H2a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h7zm6 8.73V7.27l-3.5 1.555v4.35l3.5 1.556zM1 8v6a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1z"/>
+					<path d="M9 6a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM7 3a2 2 0 1 1 4 0 2 2 0 0 1-4 0z"/>
+				</svg>
+				<h2 class="mt-3 mb-0 font-weight-bold">StreamBot Video Manager</h2>
+				<p class="text-muted">Please sign in to continue</p>
+			</div>
+			<% if (typeof error !== 'undefined' && error) { %>
+			<div class="alert alert-danger" role="alert">Invalid username or password</div>
+			<% } %>
+			<form action="/login" method="POST">
+				<div class="mb-3">
+					<label for="username" class="form-label">Username</label>
+					<div class="input-group">
+						<span class="input-group-text">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person" viewBox="0 0 16 16">
+								<path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+							</svg>
+						</span>
+						<input type="text" class="form-control" id="username" name="username" required autofocus>
+					</div>
+				</div>
+				<div class="mb-3">
+					<label for="password" class="form-label">Password</label>
+					<div class="input-group">
+						<span class="input-group-text">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-lock" viewBox="0 0 16 16">
+								<path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
+							</svg>
+						</span>
+						<input type="password" class="form-control" id="password" name="password" required>
+					</div>
+				</div>
+				<div class="d-grid">
+					<button type="submit" class="btn btn-primary btn-lg">Sign In</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
