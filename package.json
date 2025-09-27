@@ -7,8 +7,8 @@
   "scripts": {
     "start": "bun src/index.ts",
     "start:node": "node dist/index.js",
-    "server": "bun src/server.ts",
-    "server:node": "node dist/server.js",
+    "server": "bun src/server/index.ts",
+    "server:node": "node dist/server/index.js",
     "build": "tsc",
     "watch": "tsc -w"
   },
