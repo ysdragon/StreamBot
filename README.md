@@ -1,28 +1,31 @@
 <div align="center">
 
+<img src="assets/logo.svg" alt="StreamBot Logo" width="400" height="120"/>
+
 # StreamBot
-
-[![Ceasefire Now](https://badge.techforpalestine.org/default)](https://techforpalestine.org/learn-more)
-
-A powerful Discord selfbot for streaming videos and live content to Discord voice channels.
 
 ![GitHub release](https://img.shields.io/github/v/release/ysdragon/StreamBot)
 [![CodeFactor](https://www.codefactor.io/repository/github/ysdragon/streambot/badge)](https://www.codefactor.io/repository/github/ysdragon/streambot)
+
+[![Ceasefire Now](https://badge.techforpalestine.org/default)](https://techforpalestine.org/learn-more)
 
 </div>
 
 ## ✨ Features
 
-- 📁 Stream videos from a local folder
-- 🎬 Stream and search YouTube videos by title
-- 🔗 Stream YouTube videos/live streams by link
-- 🌐 Stream from arbitrary links (video files, live streams, Twitch, etc.)
-- ⚡ Playback controls: play, stop
-- 📋 Video library management
+- 📁 **Local Video Streaming**: Stream videos from your local videos folder
+- 🎬 **YouTube Integration**: Stream YouTube videos
+- 🔗 **YouTube Live Streams**: Direct streaming support for YouTube live content
+- 🌐 **Twitch Support**: Stream Twitch live streams and video-on-demand (VODs)
+- 🔗 **Direct URL Streaming**: Stream from arbitrary video file URLs and live streams
+- 🎵 **Queue System**: Queue multiple videos with auto-play and skip functionality
+- 🌐 **Web Management Interface**: Full-featured web dashboard for video library management
+- 📤 **Video Upload**: Upload videos through the web interface
 
 ## 📋 Requirements
-- [Bun](https://bun.sh/) `v1.1.39+`
+- [Bun](https://bun.sh/) `v1.1.39+` (recommended) or [Node.js](https://nodejs.org/) `v16+`
 - [FFmpeg](https://www.ffmpeg.org/) _(in PATH or working directory)_
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) _(automatically downloaded/updated by the bot)_
 
 ## 🚀 Installation
 
@@ -44,16 +47,30 @@ bun install
 
 ## 🎮 Usage
 
-Start with Bun:
+### Starting the Bot
+
+**With Bun (recommended):**
 ```bash
 bun run start
 ```
 
-Start with Node.js:
+**With Node.js:**
 ```bash
 bun run build
 bun run start:node
 ```
+
+> **Note:** All videos are played through a queue system. Use the `play` command to add videos to the queue, and they will be played sequentially with automatic advancement to the next video.
+
+### Video Sources
+
+StreamBot supports multiple video sources:
+
+- **Local Videos**: Store videos in your `VIDEOS_DIR` folder and use `play <filename>`
+- **Smart Play**: Use `play <input>` for automatic detection and streaming (local file, URL, YouTube video, or Twitch stream)
+- **YouTube Search**: Use `ytsearch <query>` to search YouTube and display results (use `play` with search results to stream)
+- **Live Streams**: Full support for YouTube Live streams and Twitch live content
+- **Video Queue**: All playback goes through a queue system - videos are added to queue and played sequentially
 
 ## 🐳 Docker Setup
 
@@ -81,7 +98,9 @@ docker compose up -d
 wget https://raw.githubusercontent.com/ysdragon/StreamBot/main/docker-compose-warp.yml
 ```
 
-2. Configure `docker-compose-warp.yml` and add your WARP license key
+2. Configure `docker-compose-warp.yml`:
+   - Add your WARP license key
+   - Update TOKEN, etc
 
 3. Launch with WARP:
 ```bash
@@ -93,22 +112,22 @@ docker compose -f docker-compose-warp.yml up -d
 
 ## 🎯 Commands
 
-| Command | Description |
-|---------|-------------|
-| `play <video>` | Play local video |
-| `playlink <url>` | Stream from URL/YouTube/Twitch |
-| `ytplay <query>` | Play YouTube video |
-| `ytsearch <query>` | Search YouTube |
-| `stop` | Stop playback |
-| `list` | Show video library |
-| `refresh` | Update video list |
-| `status` | Show playback status |
-| `preview <video>` | Generate thumbnails |
-| `help` | Show help |
+| Command | Description | Aliases |
+|---------|-------------|---------|
+| `play <input>` | Smart play: local video, URL, or YouTube search | |
+| `ytsearch <query>` | Search YouTube and display results | |
+| `stop` | Stop current playback | |
+| `skip` | Skip to next video in queue | `next` |
+| `queue` | Display current video queue | |
+| `list` | Show local video library | |
+| `status` | Show playback status | |
+| `preview <video>` | Generate video thumbnails | |
+| `ping` | Check bot latency | |
+| `help` | Show available commands | |
 
 ## Configuration
 
-Configuration is done via `.env`:
+Configuration is done via `.env` file:
 
 ```bash
 # Selfbot options
@@ -123,46 +142,45 @@ VIDEOS_DIR = "./videos" # The local path where you store video files
 PREVIEW_CACHE_DIR = "./tmp/preview-cache" # The local path where your self-bot will cache video preview thumbnails
 
 # Stream options
-STREAM_RESPECT_VIDEO_PARAMS = "false"  # This option is used to respect video parameters such as width, height, fps, bitrate, and max bitrate.
+STREAM_RESPECT_VIDEO_PARAMS = "false" # Respect original video parameters (width, height, fps, bitrate)
 STREAM_WIDTH = "1280" # The width of the video stream in pixels
 STREAM_HEIGHT = "720" # The height of the video stream in pixels
 STREAM_FPS = "30" # The frames per second (FPS) of the video stream
-STREAM_BITRATE_KBPS = "2000" # The bitrate of the video stream in kilobits per second (Kbps)
+STREAM_BITRATE_KBPS = "1000" # The bitrate of the video stream in kilobits per second (Kbps)
 STREAM_MAX_BITRATE_KBPS = "2500" # The maximum bitrate of the video stream in kilobits per second (Kbps)
-STREAM_HARDWARE_ACCELERATION = "false" # Whether to use hardware acceleration for video decoding, set to "true" to enable, "false" to disable
-STREAM_VIDEO_CODEC = "H264" # The video codec to use for the stream, can be "H264" or "H265" or "VP8"
+STREAM_HARDWARE_ACCELERATION = "false" # Enable hardware acceleration for video decoding
+STREAM_VIDEO_CODEC = "H264" # Video codec: VP8, H264, H265, VP9, or AV1
 
-# STREAM_H26X_PRESET: Determines the encoding preset for H26x video streams. 
-# If the STREAM_H26X_PRESET environment variable is set, it parses the value 
-# using the parsePreset function. If not set, it defaults to 'ultrafast' for 
-# optimal encoding speed. This preset is only applicable when the codec is 
-# H26x; otherwise, it should be disabled or ignored.
-# Available presets: "ultrafast", "superfast", "veryfast", "faster", 
-# "fast", "medium", "slow", "slower", "veryslow".
+# H.26x encoding preset for optimal quality/speed balance
+# Available presets: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow
 STREAM_H26X_PRESET = "ultrafast"
 
 # Videos server options
-SERVER_ENABLED = "false" # Whether to enable the built-in video server
-SERVER_USERNAME = "admin" # The username for the video server's admin interface
-SERVER_PASSWORD = "admin" # The password for the video server's admin interface
-SERVER_PORT = "8080" # The port number the video server will listen on
+SERVER_ENABLED = "false" # Enable the built-in web server for video management
+SERVER_USERNAME = "admin" # Username for the web interface
+SERVER_PASSWORD = "admin" # Password for the web interface (bcrypt hash is supported)
+SERVER_PORT = "8080" # Port number for the web server
 ```
 
 ## Get Token ?
 Check the [Get token wiki](https://github.com/ysdragon/StreamBot/wiki/Get-Discord-user-token)
 
-## Server
+## 🌐 Web Interface
 
-An optional basic HTTP server can be enabled to manage the video library:
+When enabled by setting `SERVER_ENABLED=true` in your `.env` file, StreamBot provides a user-friendly web-based management interface for seamless video library control.
 
-- List videos
-- Upload videos
-- Delete videos
-- Generate video preview thumbnails
+**Features:**
+- 📋 **Video Library Management**: Browse, search, and organize your video collection
+- 📤 **Video Upload**: Upload new videos directly through the web interface
+- 🖼️ **Thumbnail Generation**: Automatic preview generation for all videos in the library
 
-## Todo
+**Access:** Available at `http://localhost:SERVER_PORT` when enabled
 
-- [x]  Adding ytsearch and ytplay commands   
+**Setup:**
+1. Set `SERVER_ENABLED=true` in your `.env` file
+2. Configure `SERVER_USERNAME`, `SERVER_PASSWORD`, and `SERVER_PORT`
+3. Restart the bot to apply changes
+4. Access the web interface in your browser at the configured port
 
 ## 🤝 Contributing
 Contributions are welcome! Feel free to:
