@@ -25,6 +25,7 @@ body {
 
 .table {
 	color: var(--bs-body-color);
+	font-size: 0.875rem;
 }
 
 
@@ -135,7 +136,13 @@ input[type="file"]:not(.user-interacted) {
 }
 
 .modal-header .btn-close {
+	position: absolute;
+	right: 1rem;
+	top: 50%;
+	transform: translateY(-50%);
 	margin: 0;
+	padding: 0.5rem;
+	border-radius: 0.25rem;
 }
 
 .modal-body {
@@ -196,15 +203,6 @@ input[type="file"]:not(.user-interacted) {
 }
 
 
-.modal-header .btn-close {
-	position: absolute;
-	right: 1rem;
-	top: 50%;
-	transform: translateY(-50%);
-	margin: 0;
-	padding: 0.5rem;
-	border-radius: 0.25rem;
-}
 
 .modal-header .btn-close:hover {
 	background-color: rgba(0, 0, 0, 0.1);
@@ -271,9 +269,6 @@ input[type="file"]:not(.user-interacted) {
 	transform: translateY(-5px);
 }
 
-.table {
-	font-size: 0.875rem;
-}
 
 .table td {
 	word-break: break-word;
@@ -338,11 +333,13 @@ input[type="file"]:not(.user-interacted) {
 
 .toast.show {
 	transform: translateX(0);
+	animation: toastSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .toast.removing {
 	transform: translateX(100%);
 	opacity: 0;
+	animation: toastSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .toast.success {
@@ -518,13 +515,7 @@ input[type="file"]:not(.user-interacted) {
 	}
 }
 
-.toast.show {
-	animation: toastSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
-.toast.removing {
-	animation: toastSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
 @media (prefers-reduced-motion: reduce) {
 	.toast {

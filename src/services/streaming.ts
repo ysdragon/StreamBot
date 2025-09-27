@@ -142,17 +142,7 @@ export class StreamingService {
 		// Collect video parameters if respect_video_params is enabled
 		let videoParams = undefined;
 		if (config.respect_video_params) {
-			try {
-				const resolution = await getVideoParams(queueItem.url);
-				videoParams = {
-					width: resolution.width,
-					height: resolution.height,
-					fps: resolution.fps
-				};
-				logger.info(`Video parameters: ${resolution.width}x${resolution.height}, FPS: ${resolution.fps || 'unknown'}`);
-			} catch (error) {
-				await ErrorUtils.handleError(error, 'determining video parameters');
-			}
+			videoParams = await this.getVideoParameters(queueItem.url);
 		}
 
 		// Log playing video
@@ -162,23 +152,25 @@ export class StreamingService {
 		await this.playVideo(message, queueItem.url, queueItem.title, videoParams);
 	}
 
-	public async playVideo(message: Message, videoSource: string, title?: string, videoParams?: { width: number, height: number, fps?: number, bitrate?: string }): Promise<void> {
-		const [guildId, channelId, cmdChannelId] = [config.guildId, config.videoChannelId, config.cmdChannelId!];
-
-		this.streamStatus.manualStop = false;
-
-		// If playing from queue, ensure queue status is synchronized
-		if (title) {
-			const currentQueueItem = this.queueService.getCurrent();
-			if (currentQueueItem && currentQueueItem.title === title) {
-				this.queueService.setPlaying(true);
-			}
+	private async getVideoParameters(videoUrl: string): Promise<{ width: number, height: number, fps?: number, bitrate?: string } | undefined> {
+		try {
+			const resolution = await getVideoParams(videoUrl);
+			logger.info(`Video parameters: ${resolution.width}x${resolution.height}, FPS: ${resolution.fps || 'unknown'}`);
+			return {
+				width: resolution.width,
+				height: resolution.height,
+				fps: resolution.fps
+			};
+		} catch (error) {
+			await ErrorUtils.handleError(error, 'determining video parameters');
+			return undefined;
 		}
+	}
 
+	private async prepareVideoSource(message: Message, videoSource: string, title?: string): Promise<{ inputForFfmpeg: any, tempFilePath: string | null }> {
 		let inputForFfmpeg: any = videoSource;
 		let tempFilePath: string | null = null;
 		let downloadInProgressMessage: Message | null = null;
-		const isLiveYouTubeStream = false;
 
 		try {
 			const mediaSource = await this.mediaService.resolveMediaSource(videoSource);
@@ -208,12 +200,41 @@ export class StreamingService {
 					} else {
 						await DiscordUtils.sendError(message, `Failed to download video: ${downloadError instanceof Error ? downloadError.message : String(downloadError)}`);
 					}
-					await this.cleanupStreamStatus();
-					return;
+					throw downloadError; // Re-throw to be handled by caller
 				}
 			} else if (mediaSource) {
 				inputForFfmpeg = mediaSource.url;
 			}
+
+			return { inputForFfmpeg, tempFilePath };
+		} catch (error) {
+			// Clean up download message if it exists
+			if (downloadInProgressMessage) {
+				await downloadInProgressMessage.edit(`❌ Failed to prepare video source.`).catch(e => logger.warn("Failed to edit download message:", e));
+			}
+			throw error;
+		}
+	}
+
+	public async playVideo(message: Message, videoSource: string, title?: string, videoParams?: { width: number, height: number, fps?: number, bitrate?: string }): Promise<void> {
+		const [guildId, channelId, cmdChannelId] = [config.guildId, config.videoChannelId, config.cmdChannelId!];
+
+		this.streamStatus.manualStop = false;
+
+		// If playing from queue, ensure queue status is synchronized
+		if (title) {
+			const currentQueueItem = this.queueService.getCurrent();
+			if (currentQueueItem && currentQueueItem.title === title) {
+				this.queueService.setPlaying(true);
+			}
+		}
+
+		let tempFile: string | null = null;
+		const isLiveYouTubeStream = false;
+
+		try {
+			const { inputForFfmpeg, tempFilePath } = await this.prepareVideoSource(message, videoSource, title);
+			tempFile = tempFilePath;
 
 			// Only join voice if not already connected
 			if (!this.streamStatus.joined || !this.streamer.voiceConnection) {
@@ -330,11 +351,11 @@ export class StreamingService {
 				await this.cleanupStreamStatus();
 			}
 
-			if (tempFilePath && !isLiveYouTubeStream) {
+			if (tempFile && !isLiveYouTubeStream) {
 				try {
-					fs.unlinkSync(tempFilePath);
+					fs.unlinkSync(tempFile);
 				} catch (cleanupError) {
-					logger.error(`Failed to delete temp file ${tempFilePath}:`, cleanupError);
+					logger.error(`Failed to delete temp file ${tempFile}:`, cleanupError);
 				}
 			}
 		}
