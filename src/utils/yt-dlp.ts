@@ -74,10 +74,12 @@ function json(str: string) {
 
 export async function downloadExecutable() {
 	if (!existsSync(exePath)) {
-		logger.info("Yt-dlp couldn't be found, trying to download...");
+		logger.info("yt-dlp not found, downloading...");
 		const releases = await got.get("https://api.github.com/repos/yt-dlp/yt-dlp/releases?per_page=1").json();
 		const release = releases[0];
 		const asset = release.assets.find(ast => ast.name === filename);
+		const version = release.tag_name;
+		
 		await new Promise((resolve, reject) => {
 			got.get(asset.browser_download_url).buffer().then(x => {
 				mkdirSync(scriptsPath, { recursive: true });
@@ -85,7 +87,7 @@ export async function downloadExecutable() {
 				return 0;
 			}).then(resolve).catch(reject);
 		});
-		logger.info("Yt-dlp has been downloaded.");
+		logger.info(`yt-dlp ${version} downloaded successfully`);
 	}
 }
 
