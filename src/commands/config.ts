@@ -54,6 +54,9 @@ export default class ConfigCommand extends BaseCommand {
 			`• videosDir: ${config.videosDir}`,
 			`• previewCacheDir: ${config.previewCacheDir}`,
 			"",
+			"**yt-dlp Options:**",
+			`• ytdlpCookiesPath: ${config.ytdlpCookiesPath || '(not set)'}`,
+			"",
 			"Use `config <parameter>` to view a specific parameter",
 			"Use `config <parameter> <value>` to change a parameter"
 		].join('\n');
@@ -137,6 +140,7 @@ export default class ConfigCommand extends BaseCommand {
 				// String parameters
 				case 'videosDir':
 				case 'previewCacheDir':
+				case 'ytdlpCookiesPath':
 					(config as any)[key] = value;
 					await this.sendSuccess(context.message, `Set ${key} to \`${value}\``);
 					logger.info(`Config updated: ${key} = ${value}`);

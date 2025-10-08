@@ -6,6 +6,7 @@ import crypto from "node:crypto";
 import got from "got";
 import { YTFlags } from "../types/index.js";
 import logger from "./logger.js";
+import config from "../config.js";
 import { spawn } from "node:child_process";
 
 let determinedFilename: string;
@@ -43,6 +44,13 @@ const exePath = nodePath.resolve(scriptsPath, filename);
 
 function args(url: string, options: Partial<YTFlags>): string[] {
 	const optArgs: string[] = [];
+	
+	// Add cookies file if configured
+	if (config.ytdlpCookiesPath && existsSync(config.ytdlpCookiesPath)) {
+		optArgs.push('--cookies');
+		optArgs.push(config.ytdlpCookiesPath);
+	}
+	
 	for (const [key, val] of Object.entries(options)) {
 		if (val === null || val === undefined) {
 			continue;

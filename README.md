@@ -143,6 +143,9 @@ ADMIN_IDS = ["YOUR_USER_ID_HERE"] # A list of Discord user IDs that are consider
 VIDEOS_DIR = "./videos" # The local path where you store video files
 PREVIEW_CACHE_DIR = "./tmp/preview-cache" # The local path where your self-bot will cache video preview thumbnails
 
+# yt-dlp options
+YTDLP_COOKIES_PATH = "" # Path to cookies file for yt-dlp (for accessing age-restricted or premium content)
+
 # Stream options
 STREAM_RESPECT_VIDEO_PARAMS = "false" # Respect original video parameters (width, height, fps, bitrate)
 STREAM_WIDTH = "1280" # The width of the video stream in pixels
@@ -163,6 +166,30 @@ SERVER_USERNAME = "admin" # Username for the web interface
 SERVER_PASSWORD = "admin" # Password for the web interface (bcrypt hash is supported)
 SERVER_PORT = "8080" # Port number for the web server
 ```
+
+### Using Cookies with yt-dlp
+
+To access private, or premium content (like YouTube Premium videos), you can provide a cookies file to yt-dlp:
+
+1. **Export cookies from your browser** using a browser extension like:
+   - [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) (Chromium based browsers)
+   - [cookies.txt](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/) (Firefox based browsers)
+
+2. **Save the cookies file** (usually named `cookies.txt`) to a location accessible by the bot
+
+3. **Configure the path** in one of two ways:
+   - Set `YTDLP_COOKIES_PATH` in your `.env` file:
+     ```bash
+     YTDLP_COOKIES_PATH = "./cookies.txt"
+     ```
+   - Or use the config command while the bot is running:
+     ```
+     $config ytdlpCookiesPath ./cookies.txt
+     ```
+
+4. **Restart the bot** if you updated the `.env` file
+
+The cookies will be automatically used for all yt-dlp operations, allowing access to restricted content.
 
 ## Get Token ?
 Check the [Get token wiki](https://github.com/ysdragon/StreamBot/wiki/Get-Discord-user-token)

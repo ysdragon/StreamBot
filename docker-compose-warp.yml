@@ -15,6 +15,9 @@ services:
       VIDEOS_DIR: "./videos" # The local path where you store video files
       PREVIEW_CACHE_DIR: "./tmp/preview-cache" # The local path where your self-bot will cache video preview thumbnails
 
+      # yt-dlp options
+      YTDLP_COOKIES_PATH: "" # Path to cookies file for yt-dlp (for accessing age-restricted or premium content)
+
       # Stream options
       STREAM_RESPECT_VIDEO_PARAMS: "false" # This option is used to respect video parameters such as width, height, fps, bitrate, and max bitrate.
       STREAM_WIDTH: "1280" # The width of the video stream in pixels

@@ -77,6 +77,9 @@ export default {
 	videosDir: process.env.VIDEOS_DIR ? process.env.VIDEOS_DIR : './videos',
 	previewCacheDir: process.env.PREVIEW_CACHE_DIR ? process.env.PREVIEW_CACHE_DIR : './tmp/preview-cache',
 
+	// yt-dlp options
+	ytdlpCookiesPath: process.env.YTDLP_COOKIES_PATH ? process.env.YTDLP_COOKIES_PATH : '',
+
 	// Stream options
 	respect_video_params: process.env.STREAM_RESPECT_VIDEO_PARAMS ? parseBoolean(process.env.STREAM_RESPECT_VIDEO_PARAMS) : false,
 	width: process.env.STREAM_WIDTH ? parseInt(process.env.STREAM_WIDTH) : 1280,
