@@ -16,11 +16,11 @@
   "license": "MIT",
   "dependencies": {
     "@dank074/discord-video-stream": "5.0.1",
-    "@types/bun": "^1.2.22",
+    "@types/bun": "^1.2.23",
     "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
     "discord.js-selfbot-v13": "^3.7.0",
-    "dotenv": "^17.2.2",
+    "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
     "express-ejs-layouts": "^2.5.1",
@@ -30,12 +30,12 @@
     "multer": "^2.0.2",
     "play-dl": "^1.9.7",
     "twitch-m3u8": "^1.1.5",
-    "winston": "^3.17.0"
+    "winston": "^3.18.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/express-session": "^1.18.2",
     "@types/multer": "^2.0.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   }
 }
