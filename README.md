@@ -122,6 +122,7 @@ docker compose -f docker-compose-warp.yml up -d
 | `list` | Show local video library | |
 | `status` | Show playback status | |
 | `preview <video>` | Generate video thumbnails | |
+| `config [parameter] [value]` | View or adjust bot configuration parameters (Admin only) | `cfg`, `set` |
 | `ping` | Check bot latency | |
 | `help` | Show available commands | |
 

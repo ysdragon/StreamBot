@@ -5,7 +5,7 @@ dotenv.config({ quiet: true });
 
 const VALID_VIDEO_CODECS = ['VP8', 'H264', 'H265', 'VP9', 'AV1'];
 
-function parseVideoCodec(value: string): "VP8" | "H264" | "H265" {
+export function parseVideoCodec(value: string): "VP8" | "H264" | "H265" {
 	if (typeof value === "string") {
 		value = value.trim().toUpperCase();
 	}
@@ -15,7 +15,7 @@ function parseVideoCodec(value: string): "VP8" | "H264" | "H265" {
 	return "H264";
 }
 
-function parsePreset(value: string): "ultrafast" | "superfast" | "veryfast" | "faster" | "fast" | "medium" | "slow" | "slower" | "veryslow" {
+export function parsePreset(value: string): "ultrafast" | "superfast" | "veryfast" | "faster" | "fast" | "medium" | "slow" | "slower" | "veryslow" {
 	if (typeof value === "string") {
 		value = value.trim().toLowerCase();
 	}
@@ -35,7 +35,7 @@ function parsePreset(value: string): "ultrafast" | "superfast" | "veryfast" | "f
 	}
 }
 
-function parseBoolean(value: string | undefined): boolean {
+export function parseBoolean(value: string | undefined): boolean {
 	if (typeof value === "string") {
 		value = value.trim().toLowerCase();
 	}
