@@ -6,3 +6,4 @@ bun.lockb
 videos/
 tmp/
 *.sock
+cookies.txt
