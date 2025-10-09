@@ -17,8 +17,8 @@ export async function handleMessageCreate(
 		!message.content.startsWith(config.prefix)
 	) return;
 
-	 // Split command and arguments
-	const args = message.content.slice(config.prefix!.length).trim().split(/ +/); 
+	// Split command and arguments
+	const args = message.content.slice(config.prefix!.length).trim().split(/ +/);
 
 	// If no command provided, ignore
 	if (args.length === 0) {
