@@ -275,7 +275,7 @@ SERVER_ENABLED = "false"
 
 # Web interface authentication
 SERVER_USERNAME = "admin"
-SERVER_PASSWORD = "admin"  # Plain text or bcrypt hash
+SERVER_PASSWORD = "admin"  # Plain text, bcrypt, or argon2 hash
 
 # Web server port
 SERVER_PORT = "8080"
