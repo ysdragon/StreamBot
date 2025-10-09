@@ -21,10 +21,10 @@
 - [🎮 Usage](#-usage)
 - [🐳 Docker Setup](#-docker-setup)
 - [🎯 Commands](#-commands)
-- [⚙️ Configuration](#-configuration)
+- [⚙️ Configuration](#️-configuration)
 - [🌐 Web Interface](#-web-interface)
 - [🤝 Contributing](#-contributing)
-- [⚠️ Legal](#-legal)
+- [⚠️ Legal](#legal)
 - [📝 License](#-license)
 
 ## ✨ Features
@@ -170,7 +170,7 @@ wget https://raw.githubusercontent.com/ysdragon/StreamBot/main/docker-compose-wa
 docker compose -f docker-compose-warp.yml up -d
 ```
 
-> **⚠️ Note:** The web interface may have limited functionality when using WARP configuration.
+> **⚠️ Note:** The web interface will not work when using WARP configuration.
 
 
 ## 🎯 Commands
@@ -179,27 +179,27 @@ docker compose -f docker-compose-warp.yml up -d
 
 | Command | Description | Aliases |
 |---------|-------------|---------|
-| `play <input>` | Smart play: local video, URL, or YouTube search | |
-| `ytsearch <query>` | Search YouTube and display results | |
-| `stop` | Stop current playback and leave voice channel | `leave`, `s` |
-| `skip` | Skip to next video in queue | `next` |
-| `queue` | Display current video queue with playback status | |
-| `list` | Show local video library with file information | |
+| `play <video_name\|url\|search_query>` | Play local video, URL, or search YouTube videos | |
+| `ytsearch <query>` | Search for videos on YouTube | |
+| `stop` | Stop current video playback and clear queue | `leave`, `s` |
+| `skip` | Skip the currently playing video | `next` |
+| `queue` | Display the current video queue | |
+| `list` | Show available local videos | |
 
 ### 🔧 Utility Commands
 
 | Command | Description | Aliases |
 |---------|-------------|---------|
-| `status` | Show detailed playback status and system information | |
-| `preview <video>` | Generate 5 thumbnail previews for specified video | |
-| `ping` | Check bot latency and response time | |
-| `help [command]` | Show available commands or detailed help for specific command | |
+| `status` | Show current streaming status | |
+| `preview <video_name>` | Generate preview thumbnails for a video | |
+| `ping` | Check bot latency | |
+| `help` | Show available commands | |
 
 ### ⚙️ Administration Commands
 
 | Command | Description | Aliases |
 |---------|-------------|---------|
-| `config [parameter] [value]` | View or modify bot configuration (Admin only) | `cfg`, `set` |
+| `config [parameter] [value]` | View or adjust bot configuration parameters (Admin only) | `cfg`, `set` |
 
 ## ⚙️ Configuration
 
@@ -331,7 +331,7 @@ When enabled by setting `SERVER_ENABLED=true` in your `.env` file, StreamBot pro
 2. **Configure authentication:**
    ```bash
    SERVER_USERNAME=your_username
-   SERVER_PASSWORD=your_password  # Plain text or bcrypt hash
+   SERVER_PASSWORD=your_password  # Plain text, bcrypt hash, or argon2 hash
    SERVER_PORT=8080
    ```
 
@@ -351,6 +351,8 @@ Contributions are welcome! Feel free to:
 - 🐛 Report bugs via [issues](https://github.com/ysdragon/StreamBot/issues/new)
 - 🔧 Submit [pull requests](https://github.com/ysdragon/StreamBot/pulls)
 - 💡 Suggest new features
+
+<a id="legal"></a>
 
 ## ⚠️ Legal
 
