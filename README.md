@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/logo.svg" alt="StreamBot Logo" width="400" height="120"/>
+<img src="src/server/public/favicon.svg" alt="StreamBot Logo" width="400" height="120"/>
 
 # StreamBot
 
