@@ -360,7 +360,7 @@ This bot may violate Discord's ToS. Use at your own risk.
 
 ## ⚠️ Disclaimer
 
-I disclaim any unethical use of this project before God.
+I disavow before Allah any unethical use of this project.
 
 إبراء الذمة: أتبرأ من أي استخدام غير أخلاقي لهذا المشروع أمام الله.
 
