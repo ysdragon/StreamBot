@@ -1,5 +1,5 @@
-# Use ubuntu 24.04 (noble) as the base image
-FROM ubuntu:24.04
+# Use Debian (trixie) as the base image
+FROM node:trixie
 
 # Set the working directory
 WORKDIR /home/bots/StreamBot
