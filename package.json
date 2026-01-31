@@ -41,5 +41,8 @@
     "@types/express-session": "^1.18.2",
     "@types/multer": "^2.0.0",
     "typescript": "^5.9.3"
-  }
+  },
+  "trustedDependencies": [
+    "@lng2004/node-datachannel"
+  ]
 }
