@@ -10,7 +10,7 @@ services:
       GUILD_ID: "" # The ID of the Discord server your self-bot will be running on
       COMMAND_CHANNEL_ID: "" # The ID of the Discord channel where your self-bot will respond to commands
       VIDEO_CHANNEL_ID: "" # The ID of the Discord voice/video channel where your self-bot will stream videos
-      ADMIN_IDS: ["YOUR_USER_ID_HERE"] # A list of Discord user IDs that are considered administrators (comma-separated or JSON array format)
+      ADMIN_IDS: '["YOUR_USER_ID_HERE"]' # A list of Discord user IDs that are considered administrators (comma-separated or JSON array format)
       # General options
       VIDEOS_DIR: "./videos" # The local path where you store video files
       PREVIEW_CACHE_DIR: "./tmp/preview-cache" # The local path where your self-bot will cache video preview thumbnails
