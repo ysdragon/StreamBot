@@ -21,19 +21,19 @@
 - [🎮 Usage](#-usage)
 - [🐳 Docker Setup](#-docker-setup)
 - [🎯 Commands](#-commands)
-- [⚙️ Configuration](#️-configuration)
+- [⚙️ Configuration](#%EF%B8%8F-configuration)
 - [🌐 Web Interface](#-web-interface)
 - [🤝 Contributing](#-contributing)
-- [⚠️ Legal](#legal)
+- [⚠️ Disclaimer](#%EF%B8%8F-disclaimer)
 - [📝 License](#-license)
 
 ## ✨ Features
 
 - 📁 **Local Video Streaming**: Stream videos from your local videos folder
 - 🎬 **YouTube Integration**: Stream YouTube videos with smart search functionality
-- 🔗 **YouTube Live Streams**: Direct streaming support for YouTube live content
-- 🌐 **Twitch Support**: Stream Twitch live streams and video-on-demand (VODs)
-- 🔗 **Direct URL Streaming**: Stream from any URL supported by yt-dlp (thousands of video sites including Vimeo, Dailymotion, Facebook, Instagram, news sites, and more)
+- 📺 **YouTube Live Streams**: Direct streaming support for YouTube live content
+- 🟣 **Twitch Support**: Stream Twitch live streams and video-on-demand (VODs)
+- 🔗 **Direct URL Streaming**: Stream from any URL supported by [yt-dlp](https://github.com/yt-dlp/yt-dlp) (thousands of video sites including Vimeo, Dailymotion, Facebook, Instagram, news sites, and more)
 - 🎵 **Queue System**: Queue multiple videos with auto-play and skip functionality
 - 🌐 **Web Management Interface**: Full-featured web dashboard for video library management
 - 📤 **Video Upload**: Upload videos through the web interface or download from remote URLs
@@ -42,25 +42,18 @@
 
 ## 📋 Requirements
 
-### Runtime Requirements
-- **[Bun](https://bun.sh/) `v1.1.39+`** (recommended) or **[Node.js](https://nodejs.org/) `v21+`**
-- **[FFmpeg](https://www.ffmpeg.org/)** (automatically installed by the bot if missing)
+- **[Bun](https://bun.sh/) v1.1.39+** (recommended) or **[Node.js](https://nodejs.org/) v21+**
+- **[FFmpeg](https://www.ffmpeg.org/)** (the bot will attempt to install it automatically if missing, but manual installation is recommended)
+- **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** (automatically downloaded and updated by the bot)
 
-### System Recommendations
-- **GPU with hardware acceleration** (optional, for improved streaming performance)
-- **High-speed internet** (for remote video streaming and downloads)
-- **Sufficient disk space** (for video storage and cache)
+### 💡 Optional
+- 🎮 **GPU with hardware acceleration** for improved streaming performance
+- 🌐 **High-speed internet** for remote video streaming and downloads
+- 💾 **Sufficient disk space** for video storage and cache
 
 ## 🚀 Installation
 
 This project is [hosted on GitHub](https://github.com/ysdragon/StreamBot).
-
-### Prerequisites
-- **Bun** `v1.1.39+` (recommended) or **Node.js** `v21+`
-- **FFmpeg** (automatically installed by the bot if missing)
-- **yt-dlp** (automatically downloaded and updated by the bot)
-
-### Installation Steps
 
 1. **Clone the repository:**
 ```bash
@@ -69,17 +62,23 @@ cd StreamBot
 ```
 
 2. **Install dependencies:**
+
+With Bun (recommended):
 ```bash
 bun install
 ```
 
+With npm:
+```bash
+npm install
+```
+
 3. **Configure environment:**
    - Copy `.env.example` to `.env`
-   - Update the configuration values in `.env` (see [Configuration](#configuration) section below)
+   - Update the configuration values (see [⚙️ Configuration](#%EF%B8%8F-configuration) section)
+   - See the [wiki](https://github.com/ysdragon/StreamBot/wiki/Get-Discord-user-token) for instructions on obtaining your Discord token
 
-4. **Setup complete!**
-   - The bot will automatically download and update yt-dlp on first run
-   - Required directories for videos and cache will be created automatically
+4. **Setup complete!** 🎉 Required directories for videos and cache will be created automatically on first run.
 
 ## 🎮 Usage
 
@@ -92,40 +91,30 @@ bun run start
 
 **With Node.js:**
 ```bash
-bun run build
-bun run start:node
+npm run build
+npm run start:node
 ```
 
-**With web interface:**
+**With web interface enabled:**
+Set `SERVER_ENABLED=true` in your `.env` file. The web interface runs alongside the bot automatically.
+
+To run only the web interface without the bot:
 ```bash
-bun run server    # Start only the web interface
+bun run server       # With Bun
+npm run server:node  # With Node.js (after building)
 ```
 
 ### 📹 Video Playback
 
-**Queue System:** All videos are played through an intelligent queue system that automatically advances to the next video when the current one ends.
+All videos are played through a queue system that automatically advances to the next video when the current one ends.
 
-**Smart Detection:** The `play` command automatically detects the type of input:
-- Local files (in your `VIDEOS_DIR`)
-- YouTube videos (by URL or search)
-- Twitch streams (live or VOD)
-- Any URL supported by yt-dlp
+The `play` command automatically detects the input type:
+- 📁 Local files from your `VIDEOS_DIR`
+- 🎬 YouTube videos (by URL or search query)
+- 🟣 Twitch streams (live or VOD)
+- 🔗 Any URL supported by yt-dlp
 
-### 🔍 Content Discovery
-
-**YouTube Search:** Use `ytsearch` to find videos, then `play` with the search results to stream them.
-
-**Local Library:** Use `list` to browse your local video collection with file information.
-
-### Video Sources
-
-StreamBot supports multiple video sources:
-
-- **Local Videos**: Store videos in your `VIDEOS_DIR` folder and use `play <filename>`
-- **Smart Play**: Use `play <input>` for automatic detection and streaming (local file, YouTube video, Twitch stream, or any URL supported by yt-dlp)
-- **YouTube Search**: Use `ytsearch <query>` to search YouTube and display results (use `play` with search results to stream)
-- **Live Streams**: Full support for YouTube Live streams and Twitch live content
-- **Video Queue**: All playback goes through a queue system - videos are added to queue and played sequentially
+Use `ytsearch` to find YouTube videos, then `play` with the results to stream them. Use `list` to browse your local video collection.
 
 ## 🐳 Docker Setup
 
@@ -152,7 +141,7 @@ wget https://raw.githubusercontent.com/ysdragon/StreamBot/main/docker-compose.ym
 docker compose up -d
 ```
 
-### 🌐 Cloudflare WARP Deployment (Advanced)
+### ☁️ Cloudflare WARP Deployment
 
 For enhanced network capabilities with Cloudflare WARP:
 
@@ -170,8 +159,7 @@ wget https://raw.githubusercontent.com/ysdragon/StreamBot/main/docker-compose-wa
 docker compose -f docker-compose-warp.yml up -d
 ```
 
-> **⚠️ Note:** The web interface will not work when using WARP configuration.
-
+> ⚠️ **Note:** The web interface is not available in WARP mode because the WARP container uses network isolation that prevents external access to the web server port.
 
 ## 🎯 Commands
 
@@ -195,7 +183,7 @@ docker compose -f docker-compose-warp.yml up -d
 | `ping` | Check bot latency | |
 | `help` | Show available commands | |
 
-### ⚙️ Administration Commands
+### 🛡️ Administration Commands
 
 | Command | Description | Aliases |
 |---------|-------------|---------|
@@ -208,157 +196,131 @@ StreamBot is configured through environment variables in a `.env` file. Copy `.e
 ### 🔐 Discord Self-Bot Configuration
 
 ```bash
-# Required: Your Discord self-bot token (see wiki for setup instructions)
-TOKEN = "YOUR_BOT_TOKEN_HERE"
+# Required: Your Discord self-bot token
+# See: https://github.com/ysdragon/StreamBot/wiki/Get-Discord-user-token
+TOKEN="YOUR_BOT_TOKEN_HERE"
 
 # Command prefix for bot commands
-PREFIX = "$"
+PREFIX="$"
 
 # Discord server where the bot will operate
-GUILD_ID = "YOUR_SERVER_ID"
+GUILD_ID="YOUR_SERVER_ID"
 
 # Channel where bot will respond to commands
-COMMAND_CHANNEL_ID = "COMMAND_CHANNEL_ID"
+COMMAND_CHANNEL_ID="COMMAND_CHANNEL_ID"
 
 # Voice/video channel where bot will stream
-VIDEO_CHANNEL_ID = "VIDEO_CHANNEL_ID"
+VIDEO_CHANNEL_ID="VIDEO_CHANNEL_ID"
 
-# Admin user IDs (comma-separated or JSON array)
-ADMIN_IDS = ["YOUR_USER_ID_HERE"]
+# Admin user IDs - comma-separated or JSON array format
+# Examples:
+#   ADMIN_IDS="123456789,987654321"
+#   ADMIN_IDS=["123456789","987654321"]
+ADMIN_IDS=["YOUR_USER_ID_HERE"]
 ```
 
 ### 📁 File Management
 
 ```bash
 # Directory where video files are stored
-VIDEOS_DIR = "./videos"
+VIDEOS_DIR="./videos"
 
 # Directory for caching video preview thumbnails
-PREVIEW_CACHE_DIR = "./tmp/preview-cache"
+PREVIEW_CACHE_DIR="./tmp/preview-cache"
 ```
 
-### 🌐 Content Source Configuration
+### 🍪 Content Source Configuration
 
 ```bash
 # Path to browser cookies for accessing private/premium content
 # Supports: YouTube Premium, age-restricted content, private videos
-YTDLP_COOKIES_PATH = ""
+YTDLP_COOKIES_PATH=""
 ```
 
 ### 🎥 Streaming Configuration
 
 ```bash
 # Video Quality Settings
-STREAM_RESPECT_VIDEO_PARAMS = "false"  # Use original video parameters if true
-STREAM_WIDTH = "1280"                  # Output resolution width
-STREAM_HEIGHT = "720"                  # Output resolution height
-STREAM_FPS = "30"                      # Target frame rate
+STREAM_RESPECT_VIDEO_PARAMS="false"  # Use original video parameters if true
+STREAM_WIDTH="1280"                  # Output resolution width
+STREAM_HEIGHT="720"                  # Output resolution height
+STREAM_FPS="30"                      # Target frame rate
 
 # Bitrate Settings (affects quality and bandwidth usage)
-STREAM_BITRATE_KBPS = "2000"           # Target bitrate (higher = better quality)
-STREAM_MAX_BITRATE_KBPS = "2500"       # Maximum allowed bitrate
+STREAM_BITRATE_KBPS="2000"           # Target bitrate (higher = better quality)
+STREAM_MAX_BITRATE_KBPS="2500"       # Maximum allowed bitrate
 
 # Performance & Encoding
-STREAM_HARDWARE_ACCELERATION = "false" # Use GPU acceleration if available
-STREAM_VIDEO_CODEC = "H264"            # Codec: H264, H265, VP8, VP9, AV1
+STREAM_HARDWARE_ACCELERATION="false" # Use GPU acceleration if available
+STREAM_VIDEO_CODEC="H264"            # Codec: H264, H265, VP8, VP9, AV1
 
 # H.264/H.265 Encoding Preset (quality vs speed tradeoff)
 # Options: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow
-STREAM_H26X_PRESET = "ultrafast"
+STREAM_H26X_PRESET="ultrafast"
 ```
 
 ### 🌐 Web Interface Configuration
 
 ```bash
 # Enable/disable the web management interface
-SERVER_ENABLED = "false"
+SERVER_ENABLED="false"
 
 # Web interface authentication
-SERVER_USERNAME = "admin"
-SERVER_PASSWORD = "admin"  # Plain text, bcrypt, or argon2 hash
+SERVER_USERNAME="admin"
+SERVER_PASSWORD="admin"  # Plain text, bcrypt, or argon2 hash
 
 # Web server port
-SERVER_PORT = "8080"
+SERVER_PORT="8080"
 ```
 
-### Using Cookies with yt-dlp
+### 🍪 Using Cookies with yt-dlp
 
-To access private, or premium content (like YouTube Premium videos), you can provide a cookies file to yt-dlp:
+To access private or premium content (like YouTube Premium videos), you can provide a cookies file:
 
-1. **Export cookies from your browser** using a browser extension like:
-   - [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) (Chromium based browsers)
-   - [cookies.txt](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/) (Firefox based browsers)
+1. **Export cookies from your browser** using a browser extension:
+   - [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) (Chromium-based browsers)
+   - [cookies.txt](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/) (Firefox-based browsers)
 
 2. **Save the cookies file** (usually named `cookies.txt`) to a location accessible by the bot
 
-3. **Configure the path** in one of two ways:
-   - Set `YTDLP_COOKIES_PATH` in your `.env` file:
-     ```bash
-     YTDLP_COOKIES_PATH = "./cookies.txt"
-     ```
-   - Or use the config command while the bot is running:
-     ```
-     $config ytdlpCookiesPath ./cookies.txt
-     ```
+3. **Configure the path** in your `.env` file:
+   ```bash
+   YTDLP_COOKIES_PATH="./cookies.txt"
+   ```
+   Or use the config command at runtime:
+   ```
+   $config ytdlpCookiesPath ./cookies.txt
+   ```
 
 4. **Restart the bot** if you updated the `.env` file
 
-The cookies will be automatically used for all yt-dlp operations, allowing access to restricted content.
-
-## Get Token ?
-Check the [Get token wiki](https://github.com/ysdragon/StreamBot/wiki/Get-Discord-user-token)
-
 ## 🌐 Web Interface
 
-When enabled by setting `SERVER_ENABLED=true` in your `.env` file, StreamBot provides a comprehensive web-based management interface for seamless video library control.
+When enabled (`SERVER_ENABLED="true"`), StreamBot provides a web-based management interface.
 
 ### ✨ Features
 
 - 📋 **Video Library Management**: Browse your video collection with file sizes and detailed information
-- 📤 **Local File Upload**: Upload videos directly through the web interface with progress tracking
-- 🌐 **Remote URL Download**: Download videos from remote URLs directly to your library with progress tracking
-- 🖼️ **Video Previews**: Generate and view 5 thumbnail screenshots from different parts of each video
-- 🗑️ **File Management**: Delete videos from your library through the web interface
-- 📊 **Video Metadata**: View detailed information about video files (duration, resolution, codec, etc.)
+- 📤 **Local File Upload**: Upload videos directly with progress tracking
+- 🌐 **Remote URL Download**: Download videos from URLs directly to your library
+- 🖼️ **Video Previews**: Generate and view thumbnail screenshots from different parts of each video
+- 🗑️ **File Management**: Delete videos from your library
+- 📊 **Video Metadata**: View detailed information (duration, resolution, codec, etc.)
 
-### 🔧 Setup
+### 🔗 Access
 
-1. **Enable the web server:**
-   ```bash
-   SERVER_ENABLED=true
-   ```
-
-2. **Configure authentication:**
-   ```bash
-   SERVER_USERNAME=your_username
-   SERVER_PASSWORD=your_password  # Plain text, bcrypt hash, or argon2 hash
-   SERVER_PORT=8080
-   ```
-
-3. **Restart the bot** to apply changes
-
-4. **Access the interface** at `http://localhost:SERVER_PORT`
-
-### 🎯 Usage
-
-- **Dashboard**: Overview of all videos in your library with file sizes
-- **Upload**: Choose local files or provide remote URLs for download
-- **Preview**: Click on any video to generate and view thumbnail previews
-- **Delete**: Remove unwanted videos from your library
+After enabling and restarting the bot, access the interface at `http://localhost:8080` (or your configured `SERVER_PORT`).
 
 ## 🤝 Contributing
+
 Contributions are welcome! Feel free to:
 - 🐛 Report bugs via [issues](https://github.com/ysdragon/StreamBot/issues/new)
 - 🔧 Submit [pull requests](https://github.com/ysdragon/StreamBot/pulls)
 - 💡 Suggest new features
 
-<a id="legal"></a>
-
-## ⚠️ Legal
-
-This bot may violate Discord's ToS. Use at your own risk.
-
 ## ⚠️ Disclaimer
+
+This bot may violate Discord's Terms of Service. Use at your own risk.
 
 I disavow before Allah any unethical use of this project.
 
