@@ -1,0 +1,48 @@
+services:
+  streambot:
+    image: quay.io/ydrag0n/streambot:node
+    container_name: streambot
+    restart: always
+    environment:
+      # Selfbot options
+      TOKEN: "" # Your Discord self-bot token
+      PREFIX: "$" # The prefix used to trigger your self-bot commands
+      GUILD_ID: "" # The ID of the Discord server your self-bot will be running on
+      COMMAND_CHANNEL_ID: "" # The ID of the Discord channel where your self-bot will respond to commands
+      VIDEO_CHANNEL_ID: "" # The ID of the Discord voice/video channel where your self-bot will stream videos
+      ADMIN_IDS: '["YOUR_USER_ID_HERE"]' # A list of Discord user IDs that are considered administrators (comma-separated or JSON array format)
+      # General options
+      VIDEOS_DIR: "./videos" # The local path where you store video files
+      PREVIEW_CACHE_DIR: "./tmp/preview-cache" # The local path where your self-bot will cache video preview thumbnails
+
+      # yt-dlp options
+      YTDLP_COOKIES_PATH: "" # Path to cookies file for yt-dlp (for accessing age-restricted or premium content)
+
+      # Stream options
+      STREAM_RESPECT_VIDEO_PARAMS: "false" # This option is used to respect video parameters such as width, height, fps, bitrate, and max bitrate.
+      STREAM_WIDTH: "1280" # The width of the video stream in pixels
+      STREAM_HEIGHT: "720" # The height of the video stream in pixels
+      STREAM_FPS: "30" # The frames per second (FPS) of the video stream
+      STREAM_BITRATE_KBPS: "2000" # The bitrate of the video stream in kilobits per second (Kbps)
+      STREAM_MAX_BITRATE_KBPS: "2500" # The maximum bitrate of the video stream in kilobits per second (Kbps)
+      STREAM_HARDWARE_ACCELERATION: "false" # Whether to use hardware acceleration for video decoding, set to "true" to enable, "false" to disable
+      STREAM_VIDEO_CODEC: "H264" # The video codec to use for the stream, can be "H264" or "H265" or "VP8"
+      
+      # STREAM_H26X_PRESET: Determines the encoding preset for H26x video streams. 
+      # If the STREAM_H26X_PRESET environment variable is set, it parses the value 
+      # using the parsePreset function. If not set, it defaults to 'ultrafast' for 
+      # optimal encoding speed. This preset is only applicable when the codec is 
+      # H26x; otherwise, it should be disabled or ignored.
+      # Available presets: "ultrafast", "superfast", "veryfast", "faster", 
+      # "fast", "medium", "slow", "slower", "veryslow".
+      STREAM_H26X_PRESET: "ultrafast"
+
+      # Videos server options
+      SERVER_ENABLED: "false" # Whether to enable the built-in video server
+      SERVER_USERNAME: "admin" # The username for the video server's admin interface
+      SERVER_PASSWORD: "admin" # The password for the video server's admin interface
+      SERVER_PORT: "3000" # The port number the video server will listen on
+    volumes:
+      - ./videos:/home/bots/StreamBot/videos
+    ports:
+      - 3000:3000
