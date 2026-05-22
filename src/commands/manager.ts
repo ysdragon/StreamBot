@@ -14,9 +14,10 @@ export class CommandManager {
 	}
 
 	private async loadCommands(): Promise<void> {
-		// Prefer src for Bun (TypeScript native), dist for Node.js (compiled JS)
+		// Prefer src for Bun (TypeScript native) or dev environment, dist for Node.js (compiled JS)
 		const isBun = typeof Bun !== 'undefined';
-		const commandsPath = path.join(process.cwd(), isBun ? 'src' : 'dist', 'commands');
+		const isDev = !config.isProduction;
+		const commandsPath = path.join(process.cwd(), (isBun || isDev) ? 'src' : 'dist', 'commands');
 
 		if (!commandsPath) {
 			logger.error('Could not find commands directory in either dist/ or src/');
