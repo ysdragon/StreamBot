@@ -88,6 +88,10 @@ export class CommandManager {
 		return Array.from(this.commands.values());
 	}
 
+	public exists(name: string): boolean {
+		return this.commands.has(name.toLowerCase()) || this.aliases.has(name.toLowerCase());
+	}
+
 	public async executeCommand(commandName: string, context: CommandContext): Promise<boolean> {
 		const command = this.getCommand(commandName);
 
