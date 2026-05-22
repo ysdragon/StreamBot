@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import express from 'express';
 import axios from 'axios';
 import https from 'https';
 import fs from 'fs';
@@ -7,7 +7,7 @@ import config from '../../config.js';
 import logger from '../../utils/logger.js';
 import { upload } from '../middleware/multer.js';
 
-const router = Router();
+const router: express.Router = express.Router();
 const agent = new https.Agent({ rejectUnauthorized: false });
 
 // Upload route - local file with progress support
@@ -29,7 +29,7 @@ router.post("/api/remote_upload", upload.single("link"), async (req, res) => {
  	try {
  		// First, get the file info to determine size
  		const headResponse = await axios.head(link, { httpsAgent: agent });
- 		const totalSize = parseInt(headResponse.headers['content-length'], 10);
+ 		const totalSize = Number(headResponse.headers['content-length'] || 0);
 
  		// Set up progress tracking
  		let downloaded = 0;
