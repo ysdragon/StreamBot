@@ -3,6 +3,7 @@ node_modules/
 dist/
 .env
 bun.lockb
+*lock.json
 videos/
 tmp/
 *.sock
