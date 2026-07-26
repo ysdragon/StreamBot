@@ -64,6 +64,10 @@ function parseAdminIds(value: string): string[] {
 }
 
 export default {
+	get isProduction() {
+		return process.env.NODE_ENV === 'production';
+	},
+
 	// Selfbot options
 	token: process.env.TOKEN || '',
 	prefix: process.env.PREFIX || '',

@@ -27,6 +27,12 @@ export async function handleMessageCreate(
 
 	const commandName = args.shift()!.toLowerCase();
 
+	if (!commandManager.exists(commandName)) {
+		await message.react('❌');
+		await message.reply(`❌ **Error**: Unknown command. Use \`${config.prefix}help\` to see available commands.`);
+		return;
+	}
+	
 	const context: CommandContext = {
 		message,
 		args,
@@ -39,6 +45,6 @@ export async function handleMessageCreate(
 
 	if (!executed) {
 		await message.react('❌');
-		await message.reply(`❌ **Error**: Unknown command. Use \`${config.prefix}help\` to see available commands.`);
+		await message.reply(`❌ **Error**: Failed to execute command. Please check the command usage and try again.`);
 	}
 }

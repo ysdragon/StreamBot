@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import config from '../../config.js';
 import logger from '../../utils/logger.js';
 import { prettySize } from '../utils/helpers.js';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 // Main dashboard route
 router.get("/", (req, res) => {
