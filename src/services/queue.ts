@@ -29,7 +29,8 @@ export class QueueService {
 			requestedBy,
 			mediaSource.type,
 			mediaSource.isLive,
-			originalInput || mediaSource.url
+			originalInput || mediaSource.url,
+			mediaSource.headers
 		);
 	}
 
@@ -42,7 +43,8 @@ export class QueueService {
 		requestedBy: string,
 		type: 'youtube' | 'twitch' | 'local' | 'url' = 'url',
 		isLive: boolean = false,
-		originalInput?: string
+		originalInput?: string,
+		headers?: Record<string, string>
 	): Promise<QueueItem> {
 		const queueItem: QueueItem = {
 			id: this.generateId(),
@@ -54,6 +56,7 @@ export class QueueService {
 			addedAt: new Date(),
 			originalInput: originalInput || url,
 			resolved: originalInput === url,
+			headers,
 		};
 
 		this.queue.items.push(queueItem);
