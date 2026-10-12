@@ -132,7 +132,7 @@ $play https://cdn.example.com/video.m3u8 --user-agent "Mozilla/5.0 ..." --header
 | `--user-agent <ua>` / `--ua <ua>` | `User-Agent` |
 | `--header "Name: Value"` / `-H "Name: Value"` | Any header (repeatable) |
 
-Wrap values containing spaces in double quotes, and use `\"` for a literal quote inside a value. Headers are supported for direct `http(s)` stream URLs (not YouTube or Twitch links) and are applied to ffmpeg, ffprobe and yt-dlp for that queue item.
+Wrap values containing spaces in double quotes, and use `\"` for a literal quote inside a value. Headers are supported for direct `http(s)` stream URLs (not YouTube or Twitch links) and are applied to ffmpeg and yt-dlp for that queue item (and to ffprobe when `STREAM_RESPECT_VIDEO_PARAMS` is enabled).
 
 ## 🐳 Docker Setup
 
