@@ -38,6 +38,12 @@ export default class PlayCommand extends BaseCommand {
 				await this.sendError(context.message, 'Custom headers can only be used with http(s) URLs.');
 				return;
 			}
+
+			// YouTube and Twitch sources are resolved by their own extractors, which don't use custom headers
+			if (/youtube\.com\/|youtu\.be\/|twitch\.tv\//i.test(input)) {
+				await this.sendError(context.message, 'Custom headers are not supported for YouTube or Twitch URLs.');
+				return;
+			}
 		}
 
 		if (!input) {

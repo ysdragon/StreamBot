@@ -29,18 +29,26 @@ export function hasHeaderFlags(args: string[]): boolean {
 	return args.some(arg => HEADER_FLAGS.has(arg.toLowerCase()) || GENERIC_HEADER_FLAGS.has(arg.toLowerCase()));
 }
 
+const QUOTE_CHARS = new Set(['"', '“', '”']);
+
 /**
  * Split a string into whitespace-separated tokens, keeping "quoted values" together.
- * Smart quotes (as typed by mobile keyboards) are treated as regular double quotes.
+ * Smart quotes (as typed by mobile keyboards) are treated as regular double quotes,
+ * and \" inserts a literal quote (e.g. for sec-ch-ua values).
  */
 export function tokenize(text: string): string[] {
 	const tokens: string[] = [];
+	const chars = [...text];
 	let current = '';
 	let inQuotes = false;
 	let hasToken = false;
 
-	for (const char of text) {
-		if (char === '"' || char === '“' || char === '”') {
+	for (let i = 0; i < chars.length; i++) {
+		const char = chars[i];
+		if (char === '\\' && QUOTE_CHARS.has(chars[i + 1])) {
+			current += chars[++i];
+			hasToken = true;
+		} else if (QUOTE_CHARS.has(char)) {
 			inQuotes = !inQuotes;
 			hasToken = true;
 		} else if (!inQuotes && /\s/.test(char)) {
@@ -88,7 +96,8 @@ function validateHeaderValue(name: string, value: string): void {
  * Remaining tokens are joined back into the input (URL, video name or search query).
  */
 export function parseHeaderFlags(tokens: string[]): ParsedPlayInput {
-	const headers: Record<string, string> = {};
+	// Null prototype so any valid header name (even __proto__) becomes an own property
+	const headers: Record<string, string> = Object.create(null);
 	const inputTokens: string[] = [];
 
 	for (let i = 0; i < tokens.length; i++) {
@@ -102,8 +111,9 @@ export function parseHeaderFlags(tokens: string[]): ParsedPlayInput {
 			continue;
 		}
 
+		// No valid header value starts with '-': this is most likely the next flag
 		const value = tokens[++i];
-		if (value === undefined || value === '') {
+		if (value === undefined || value === '' || value.startsWith('-')) {
 			throw new Error(`Missing value for \`${token}\`.`);
 		}
 
