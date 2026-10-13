@@ -18,7 +18,8 @@ const HEADER_FLAGS = new Map<string, string>([
 ]);
 
 // Generic flags taking a "Name: Value" argument
-const GENERIC_HEADER_FLAGS = new Set(['--header', '-h']);
+// No short alias (e.g. -h): it would turn ordinary search queries containing it into header flags
+const GENERIC_HEADER_FLAGS = new Set(['--header']);
 
 const HEADER_NAME_REGEX = /^[A-Za-z0-9!#$%&'*+.^_`|~-]+$/;
 
