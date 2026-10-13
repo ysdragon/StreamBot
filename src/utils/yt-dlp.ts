@@ -64,6 +64,12 @@ function args(url: string, options: Partial<YTFlags>): string[] {
 			} else {
 				optArgs.push(`--no-${flag}`);
 			}
+		} else if (Array.isArray(val)) {
+			// Repeatable flags (e.g. --add-header)
+			for (const item of val) {
+				optArgs.push(`--${flag}`);
+				optArgs.push(String(item));
+			}
 		} else {
 			optArgs.push(`--${flag}`);
 			optArgs.push(String(val));

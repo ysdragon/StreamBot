@@ -41,11 +41,12 @@ export class StreamingService {
 	public async addToQueue(
 		message: Message,
 		videoSource: string,
-		title?: string
+		title?: string,
+		headers?: Record<string, string>
 	): Promise<boolean> {
 		try {
 			const username = message.author.username;
-			const mediaSource = await this.mediaService.resolveMediaSource(videoSource);
+			const mediaSource = await this.mediaService.resolveMediaSource(videoSource, headers);
 
 			if (mediaSource) {
 				const queueItem = await this.queueService.addToQueue(mediaSource, username);
@@ -59,7 +60,8 @@ export class StreamingService {
 					username,
 					'url',
 					false,
-					videoSource
+					videoSource,
+					headers
 				);
 				await DiscordUtils.sendSuccess(message, `Added to queue: \`${queueItem.title}\``);
 				return true;
@@ -142,19 +144,19 @@ export class StreamingService {
 		// Collect video parameters if respect_video_params is enabled
 		let videoParams = undefined;
 		if (config.respect_video_params) {
-			videoParams = await this.getVideoParameters(queueItem.url);
+			videoParams = await this.getVideoParameters(queueItem.url, queueItem.headers);
 		}
 
 		// Log playing video
 		logger.info(`Playing from queue: ${queueItem.title} (${queueItem.url})`);
 
 		// Use streaming service to play the video with video parameters
-		await this.playVideo(message, queueItem.url, queueItem.title, videoParams);
+		await this.playVideo(message, queueItem.url, queueItem.title, videoParams, queueItem.headers);
 	}
 
-	private async getVideoParameters(videoUrl: string): Promise<{ width: number, height: number, fps?: number, bitrate?: number } | undefined> {
+	private async getVideoParameters(videoUrl: string, headers?: Record<string, string>): Promise<{ width: number, height: number, fps?: number, bitrate?: number } | undefined> {
 		try {
-			const resolution = await getVideoParams(videoUrl);
+			const resolution = await getVideoParams(videoUrl, headers);
 			logger.info(`Video parameters: ${resolution.width}x${resolution.height}, FPS: ${resolution.fps || 'unknown'}, Bitrate: ${resolution.bitrate || 'unknown'}`);
 			
 			let bitrateKbps: number | undefined;
@@ -196,7 +198,7 @@ export class StreamingService {
 		}
 	}
 
-	private setupStreamConfiguration(videoParams?: { width: number, height: number, fps?: number, bitrate?: number }): any {
+	private setupStreamConfiguration(videoParams?: { width: number, height: number, fps?: number, bitrate?: number }, headers?: Record<string, string>): any {
 		let width = videoParams?.width || config.width;
 		let height = videoParams?.height || config.height;
 		let frameRate = videoParams?.fps || config.fps;
@@ -232,7 +234,9 @@ export class StreamingService {
 			videoCodec: Utils.normalizeVideoCodec(config.videoCodec),
 			hardwareAcceleratedDecoding: config.hardwareAcceleratedDecoding,
 			minimizeLatency: false,
-			h26xPreset: config.h26xPreset
+			h26xPreset: config.h26xPreset,
+			// Merged by the library with its default User-Agent/Connection headers
+			...(headers && Object.keys(headers).length > 0 && { customHeaders: headers })
 		};
 	}
 
@@ -332,8 +336,8 @@ export class StreamingService {
 		}
 	}
 
-	private async prepareVideoSource(message: Message, videoSource: string, title?: string): Promise<{ inputForFfmpeg: any, tempFilePath: string | null }> {
-		const mediaSource = await this.mediaService.resolveMediaSource(videoSource);
+	private async prepareVideoSource(message: Message, videoSource: string, title?: string, headers?: Record<string, string>): Promise<{ inputForFfmpeg: any, tempFilePath: string | null }> {
+		const mediaSource = await this.mediaService.resolveMediaSource(videoSource, headers);
 
 		if (mediaSource && mediaSource.type === 'youtube' && !mediaSource.isLive) {
 			const tempFilePath = await this.handleDownload(message, videoSource, title);
@@ -370,7 +374,7 @@ export class StreamingService {
 		}
 	}
 
-	public async playVideo(message: Message, videoSource: string, title?: string, videoParams?: { width: number, height: number, fps?: number, bitrate?: number }): Promise<void> {
+	public async playVideo(message: Message, videoSource: string, title?: string, videoParams?: { width: number, height: number, fps?: number, bitrate?: number }, headers?: Record<string, string>): Promise<void> {
 		const [guildId, channelId] = [config.guildId, config.videoChannelId];
 		this.streamStatus.manualStop = false;
 
@@ -383,13 +387,13 @@ export class StreamingService {
 
 		let tempFile: string | null = null;
 		try {
-			const { inputForFfmpeg, tempFilePath } = await this.prepareVideoSource(message, videoSource, title);
+			const { inputForFfmpeg, tempFilePath } = await this.prepareVideoSource(message, videoSource, title, headers);
 			tempFile = tempFilePath;
 
 			await this.ensureVoiceConnection(guildId, channelId, title);
 			await DiscordUtils.sendPlaying(message, title || videoSource);
 
-			const streamOpts = this.setupStreamConfiguration(videoParams);
+			const streamOpts = this.setupStreamConfiguration(videoParams, headers);
 			await this.executeStreamWorkflow(inputForFfmpeg, streamOpts, message, title || videoSource, videoSource);
 		} catch (error) {
 			await ErrorUtils.handleError(error, `playing video: ${title || videoSource}`);

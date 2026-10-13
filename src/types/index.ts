@@ -220,7 +220,7 @@ export interface YTFlags {
 	preferInsecure?: boolean,
 	userAgent?: string,
 	referer?: string,
-	addHeader?: string,
+	addHeader?: string | string[],
 	bidiWorkaround?: boolean,
 	sleepInterval?: number,
 	maxSleepInterval?: number,
@@ -304,6 +304,7 @@ export interface MediaSource {
  	title: string;
  	type: 'youtube' | 'twitch' | 'local' | 'url';
  	isLive?: boolean;
+ 	headers?: Record<string, string>;
 }
 
 export interface QueueItem {
@@ -316,6 +317,7 @@ export interface QueueItem {
   	addedAt: Date;
   	originalInput?: string;
   	resolved?: boolean;
+  	headers?: Record<string, string>;
 }
 
 export interface VideoQueue {

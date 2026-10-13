@@ -116,6 +116,24 @@ The `play` command automatically detects the input type:
 
 Use `ytsearch` to find YouTube videos, then `play` with the results to stream them. Use `list` to browse your local video collection.
 
+#### 🔐 Custom HTTP headers
+
+Some streams (e.g. protected `.m3u8` HLS links) require specific HTTP headers. You can pass them after the URL:
+
+```
+$play https://cdn.example.com/live/index.m3u8 --referer https://example.com/ --origin https://example.com
+$play https://cdn.example.com/video.m3u8 --user-agent "Mozilla/5.0 ..." --header "Cookie: session=abc" --header "X-Token: 123"
+```
+
+| Flag | Header |
+|------|--------|
+| `--referer <url>` | `Referer` |
+| `--origin <url>` | `Origin` |
+| `--user-agent <ua>` / `--ua <ua>` | `User-Agent` |
+| `--header "Name: Value"` | Any header (repeatable) |
+
+Wrap values containing spaces in double quotes, and use `\"` for a literal quote inside a value. Headers are supported for direct `http(s)` stream URLs (not YouTube or Twitch links) and are applied to ffmpeg and yt-dlp for that queue item (and to ffprobe when `STREAM_RESPECT_VIDEO_PARAMS` is enabled).
+
 ## 🐳 Docker Setup
 
 StreamBot provides ready-to-use Docker configurations for easy deployment.
@@ -167,7 +185,7 @@ docker compose -f docker-compose-warp.yml up -d
 
 | Command | Description | Aliases |
 |---------|-------------|---------|
-| `play <video_name\|url\|search_query>` | Play local video, URL, or search YouTube videos | |
+| `play <video_name\|url\|search_query> [--referer URL] [--origin URL] [--user-agent UA] [--header "Name: Value"]` | Play local video, URL, or search YouTube videos. Header flags apply to URLs only ([details](#-custom-http-headers)) | |
 | `ytsearch <query>` | Search for videos on YouTube | |
 | `stop` | Stop current video playback and clear queue | `leave`, `s` |
 | `skip` | Skip the currently playing video | `next` |

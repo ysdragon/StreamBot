@@ -49,10 +49,21 @@ export async function ffmpegScreenshot(video: string): Promise<string[]> {
 	});
 }
 
+// Format headers for ffmpeg/ffprobe's -headers option
+export function formatFfmpegHeaders(headers: Record<string, string>): string {
+	return Object.entries(headers)
+		.map(([key, value]) => `${key}: ${value}`)
+		.join("\r\n") + "\r\n";
+}
+
 // Checking video params
-export async function getVideoParams(videoPath: string): Promise<{ width: number, height: number, bitrate: string, maxbitrate: string, fps: number }> {
+export async function getVideoParams(videoPath: string, headers?: Record<string, string>): Promise<{ width: number, height: number, bitrate: string, maxbitrate: string, fps: number }> {
+	const probeOptions = headers && Object.keys(headers).length > 0
+		? ['-headers', formatFfmpegHeaders(headers)]
+		: [];
+
 	return new Promise((resolve, reject) => {
-		ffmpeg.ffprobe(videoPath, (err, metadata) => {
+		ffmpeg.ffprobe(videoPath, probeOptions, (err, metadata) => {
 			if (err) {
 				return reject(err);
 			}

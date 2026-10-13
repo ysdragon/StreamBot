@@ -15,7 +15,7 @@ export class MediaService {
 		this.youtube = new Youtube();
 	}
 
-	public async resolveMediaSource(url: string): Promise<MediaSource | null> {
+	public async resolveMediaSource(url: string, headers?: Record<string, string>): Promise<MediaSource | null> {
 		try {
 			if (url.includes('youtube.com/') || url.includes('youtu.be/')) {
 				return await this._resolveYouTubeSource(url);
@@ -24,7 +24,7 @@ export class MediaService {
 			} else if (GeneralUtils.isLocalFile(url)) {
 				return this._resolveLocalSource(url);
 			} else if (GeneralUtils.isValidUrl(url)) {
-				return this._resolveDirectUrlSource(url);
+				return this._resolveDirectUrlSource(url, headers);
 			} else {
 				return this.searchAndPlayYouTube(url);
 			}
@@ -119,14 +119,17 @@ export class MediaService {
 		};
 	}
 
-	private async _resolveDirectUrlSource(url: string): Promise<MediaSource> {
+	private async _resolveDirectUrlSource(url: string, headers?: Record<string, string>): Promise<MediaSource> {
+		const hasHeaders = headers && Object.keys(headers).length > 0;
+
 		// First try to get metadata using yt-dlp
 		try {
 			const metadata = await ytdl(url, {
 				dumpJson: true,
 				skipDownload: true,
 				noWarnings: true,
-				quiet: true
+				quiet: true,
+				addHeader: hasHeaders ? Object.entries(headers).map(([key, value]) => `${key}:${value}`) : undefined
 			}) as YTResponse;
 
 			// If yt-dlp succeeds, use the extracted metadata
@@ -152,7 +155,8 @@ export class MediaService {
 				return {
 					url: streamUrl,
 					title: metadata.title,
-					type: 'url'
+					type: 'url',
+					headers
 				};
 			}
 		} catch (error) {
@@ -182,7 +186,8 @@ export class MediaService {
 		return {
 			url,
 			title,
-			type: 'url'
+			type: 'url',
+			headers
 		};
 	}
 
