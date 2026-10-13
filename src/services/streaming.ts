@@ -107,6 +107,7 @@ export class StreamingService {
 
 		this.isSkipping = true;
 		let nextItem: QueueItem | null;
+		let playback: Promise<void>;
 
 		try {
 			// Stop the current stream immediately
@@ -130,17 +131,23 @@ export class StreamingService {
 
 			// Reset manual stop flag since we're starting a new video
 			this.streamStatus.manualStop = false;
+
+			// Skip cleanup since we're playing the next item immediately.
+			// Keep the lock until the next item is actually streaming (or failed to start): while it is
+			// still being prepared there is no controller to abort yet, so another skip couldn't stop it.
+			// Not until it finishes, though: that would reject every later skip for the whole video.
+			let markStarted!: () => void;
+			const started = new Promise<void>(resolve => markStarted = resolve);
+			playback = this.playVideoFromQueueItem(message, nextItem, markStarted);
+			await Promise.race([started, playback]);
 		} finally {
 			this.isSkipping = false;
 		}
 
-		// Skip cleanup since we're playing the next item immediately.
-		// Outside the skip lock: this only returns when the next item finishes playing,
-		// and holding the lock until then rejected every later skip ("Skip already in progress")
-		await this.playVideoFromQueueItem(message, nextItem);
+		await playback;
 	}
 
-	private async playVideoFromQueueItem(message: Message, queueItem: QueueItem): Promise<void> {
+	private async playVideoFromQueueItem(message: Message, queueItem: QueueItem, onStarted?: () => void): Promise<void> {
 		// Ensure queue is marked as playing
 		this.queueService.setPlaying(true);
 
@@ -154,7 +161,7 @@ export class StreamingService {
 		logger.info(`Playing from queue: ${queueItem.title} (${queueItem.url})`);
 
 		// Use streaming service to play the video with video parameters
-		await this.playVideo(message, queueItem.url, queueItem.title, videoParams, queueItem.headers);
+		await this.playVideo(message, queueItem.url, queueItem.title, videoParams, queueItem.headers, onStarted);
 	}
 
 	private async getVideoParameters(videoUrl: string, headers?: Record<string, string>): Promise<{ width: number, height: number, fps?: number, bitrate?: number } | undefined> {
@@ -354,8 +361,10 @@ export class StreamingService {
 		return { inputForFfmpeg: mediaSource ? mediaSource.url : videoSource, tempFilePath: null };
 	}
 
-	private async executeStreamWorkflow(input: any, options: any, message: Message, title: string, source: string): Promise<void> {
+	private async executeStreamWorkflow(input: any, options: any, message: Message, title: string, source: string, onStarted?: () => void): Promise<void> {
 		this.controller = new AbortController();
+		// From here on the stream can be stopped through this.controller
+		onStarted?.();
 		await this.executeStream(input, options, message, title, source);
 	}
 
@@ -377,7 +386,7 @@ export class StreamingService {
 		}
 	}
 
-	public async playVideo(message: Message, videoSource: string, title?: string, videoParams?: { width: number, height: number, fps?: number, bitrate?: number }, headers?: Record<string, string>): Promise<void> {
+	public async playVideo(message: Message, videoSource: string, title?: string, videoParams?: { width: number, height: number, fps?: number, bitrate?: number }, headers?: Record<string, string>, onStarted?: () => void): Promise<void> {
 		const [guildId, channelId] = [config.guildId, config.videoChannelId];
 		this.streamStatus.manualStop = false;
 
@@ -397,7 +406,7 @@ export class StreamingService {
 			await DiscordUtils.sendPlaying(message, title || videoSource);
 
 			const streamOpts = this.setupStreamConfiguration(videoParams, headers);
-			await this.executeStreamWorkflow(inputForFfmpeg, streamOpts, message, title || videoSource, videoSource);
+			await this.executeStreamWorkflow(inputForFfmpeg, streamOpts, message, title || videoSource, videoSource, onStarted);
 		} catch (error) {
 			await ErrorUtils.handleError(error, `playing video: ${title || videoSource}`);
 			if (this.controller && !this.controller.signal.aborted) this.controller.abort();
