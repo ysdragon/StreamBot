@@ -106,6 +106,7 @@ export class StreamingService {
 		}
 
 		this.isSkipping = true;
+		let nextItem: QueueItem | null;
 
 		try {
 			// Stop the current stream immediately
@@ -114,7 +115,7 @@ export class StreamingService {
 			this.streamer.stopStream();
 
 			const currentItem = this.queueService.getCurrent(); // Get item being skipped
-			const nextItem = this.queueService.skip(); // Advance the queue
+			nextItem = this.queueService.skip(); // Advance the queue
 
 			if (!nextItem) {
 				// No more items in queue - stop playback and leave voice channel
@@ -129,12 +130,14 @@ export class StreamingService {
 
 			// Reset manual stop flag since we're starting a new video
 			this.streamStatus.manualStop = false;
-
-			// Skip cleanup since we're playing the next item immediately
-			await this.playVideoFromQueueItem(message, nextItem);
 		} finally {
 			this.isSkipping = false;
 		}
+
+		// Skip cleanup since we're playing the next item immediately.
+		// Outside the skip lock: this only returns when the next item finishes playing,
+		// and holding the lock until then rejected every later skip ("Skip already in progress")
+		await this.playVideoFromQueueItem(message, nextItem);
 	}
 
 	private async playVideoFromQueueItem(message: Message, queueItem: QueueItem): Promise<void> {
