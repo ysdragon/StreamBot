@@ -17,6 +17,9 @@ export class StreamingService {
  	private streamStatus: StreamStatus;
  	private failedVideos: Set<string> = new Set();
  	private isSkipping: boolean = false;
+	// Bumped by every playVideo and skip: a playback whose session is no longer current was
+	// replaced, so it must leave the queue and the stream status to the newer one
+	private playbackSession: number = 0;
 
  	constructor(client: Client, streamStatus: StreamStatus) {
  		this.streamer = new Streamer(client);
@@ -95,26 +98,26 @@ export class StreamingService {
 			return;
 		}
 
-		// Check if this is the last item in the queue
-		const queueLength = this.queueService.getLength();
-		const isLastItem = queueLength <= 1;
-
-		// Prevent concurrent skip operations only if there are more items in queue
-		if (this.isSkipping && !isLastItem) {
+		// Prevent concurrent skip operations, the last item included: the lock is only held
+		// while the next item is being prepared, which nothing could stop yet
+		if (this.isSkipping) {
 			await DiscordUtils.sendError(message, 'Skip already in progress.');
 			return;
 		}
 
 		this.isSkipping = true;
+		let nextItem: QueueItem | null;
+		let playback: Promise<void>;
 
 		try {
 			// Stop the current stream immediately
+			this.playbackSession++;
 			this.streamStatus.manualStop = true;
 			this.controller?.abort();
 			this.streamer.stopStream();
 
 			const currentItem = this.queueService.getCurrent(); // Get item being skipped
-			const nextItem = this.queueService.skip(); // Advance the queue
+			nextItem = this.queueService.skip(); // Advance the queue
 
 			if (!nextItem) {
 				// No more items in queue - stop playback and leave voice channel
@@ -130,14 +133,22 @@ export class StreamingService {
 			// Reset manual stop flag since we're starting a new video
 			this.streamStatus.manualStop = false;
 
-			// Skip cleanup since we're playing the next item immediately
-			await this.playVideoFromQueueItem(message, nextItem);
+			// Skip cleanup since we're playing the next item immediately.
+			// Keep the lock until the next item is actually streaming (or failed to start): while it is
+			// still being prepared there is no controller to abort yet, so another skip couldn't stop it.
+			// Not until it finishes, though: that would reject every later skip for the whole video.
+			let markStarted!: () => void;
+			const started = new Promise<void>(resolve => markStarted = resolve);
+			playback = this.playVideoFromQueueItem(message, nextItem, markStarted);
+			await Promise.race([started, playback]);
 		} finally {
 			this.isSkipping = false;
 		}
+
+		await playback;
 	}
 
-	private async playVideoFromQueueItem(message: Message, queueItem: QueueItem): Promise<void> {
+	private async playVideoFromQueueItem(message: Message, queueItem: QueueItem, onStarted?: () => void): Promise<void> {
 		// Ensure queue is marked as playing
 		this.queueService.setPlaying(true);
 
@@ -151,7 +162,7 @@ export class StreamingService {
 		logger.info(`Playing from queue: ${queueItem.title} (${queueItem.url})`);
 
 		// Use streaming service to play the video with video parameters
-		await this.playVideo(message, queueItem.url, queueItem.title, videoParams, queueItem.headers);
+		await this.playVideo(message, queueItem.url, queueItem.title, videoParams, queueItem.headers, onStarted);
 	}
 
 	private async getVideoParameters(videoUrl: string, headers?: Record<string, string>): Promise<{ width: number, height: number, fps?: number, bitrate?: number } | undefined> {
@@ -240,12 +251,13 @@ export class StreamingService {
 		};
 	}
 
-	private async executeStream(inputForFfmpeg: any, streamOpts: any, message: Message, title: string, videoSource: string): Promise<void> {
-		const { command, output: ffmpegOutput } = prepareStream(inputForFfmpeg, streamOpts, this.controller!.signal);
+	private async executeStream(controller: AbortController, inputForFfmpeg: any, streamOpts: any, message: Message, title: string, videoSource: string): Promise<void> {
+		// Uses its own controller, not this.controller: a stopped run's late errors must not abort the next one
+		const { command, output: ffmpegOutput } = prepareStream(inputForFfmpeg, streamOpts, controller.signal);
 
 		command.on("error", (err, stdout, stderr) => {
 			// Don't log error if it's due to manual stop
-			if (!this.streamStatus.manualStop && this.controller && !this.controller.signal.aborted) {
+			if (!this.streamStatus.manualStop && !controller.signal.aborted) {
 				logger.error("An error happened with ffmpeg:", err.message);
 				if (stdout) {
 					logger.error("ffmpeg stdout:", stdout);
@@ -253,24 +265,24 @@ export class StreamingService {
 				if (stderr) {
 					logger.error("ffmpeg stderr:", stderr);
 				}
-				this.controller.abort();
+				controller.abort();
 			}
 		});
 
-		await playStream(ffmpegOutput, this.streamer, undefined, this.controller!.signal)
+		await playStream(ffmpegOutput, this.streamer, undefined, controller.signal)
 			.catch((err) => {
-				if (this.controller && !this.controller.signal.aborted) {
+				if (!controller.signal.aborted) {
 					logger.error('playStream error:', err);
 					// Send error message to user
 					DiscordUtils.sendError(message, `Stream error: ${err.message || 'Unknown error'}`).catch(e =>
 						logger.error('Failed to send error message:', e)
 					);
 				}
-				if (this.controller && !this.controller.signal.aborted) this.controller.abort();
+				if (!controller.signal.aborted) controller.abort();
 			});
 
 		// Only log as finished if we didn't have an error and weren't manually stopped
-		if (this.controller && !this.controller.signal.aborted && !this.streamStatus.manualStop) {
+		if (!controller.signal.aborted && !this.streamStatus.manualStop) {
 			logger.info(`Finished playing: ${title || videoSource}`);
 		} else if (this.streamStatus.manualStop) {
 			logger.info(`Stopped playing: ${title || videoSource}`);
@@ -351,18 +363,24 @@ export class StreamingService {
 		return { inputForFfmpeg: mediaSource ? mediaSource.url : videoSource, tempFilePath: null };
 	}
 
-	private async executeStreamWorkflow(input: any, options: any, message: Message, title: string, source: string): Promise<void> {
-		this.controller = new AbortController();
-		await this.executeStream(input, options, message, title, source);
+	private async executeStreamWorkflow(input: any, options: any, message: Message, title: string, source: string, onStarted?: () => void): Promise<void> {
+		const controller = new AbortController();
+		this.controller = controller;
+		// From here on the stream can be stopped through this.controller
+		onStarted?.();
+		await this.executeStream(controller, input, options, message, title, source);
 	}
 
-	private async finalizeStream(message: Message, tempFile: string | null): Promise<void> {
-		if (!this.streamStatus.manualStop && this.controller && !this.controller.signal.aborted) {
-			await this.handleQueueAdvancement(message);
-		} else {
-			this.queueService.setPlaying(false);
-			this.queueService.resetCurrentIndex();
-			await this.cleanupStreamStatus();
+	private async finalizeStream(message: Message, tempFile: string | null, session: number): Promise<void> {
+		// Skipped: the next item's playback has taken over the queue and the stream status
+		if (session === this.playbackSession) {
+			if (!this.streamStatus.manualStop && this.controller && !this.controller.signal.aborted) {
+				await this.handleQueueAdvancement(message);
+			} else {
+				this.queueService.setPlaying(false);
+				this.queueService.resetCurrentIndex();
+				await this.cleanupStreamStatus();
+			}
 		}
 
 		if (tempFile) {
@@ -374,8 +392,9 @@ export class StreamingService {
 		}
 	}
 
-	public async playVideo(message: Message, videoSource: string, title?: string, videoParams?: { width: number, height: number, fps?: number, bitrate?: number }, headers?: Record<string, string>): Promise<void> {
+	public async playVideo(message: Message, videoSource: string, title?: string, videoParams?: { width: number, height: number, fps?: number, bitrate?: number }, headers?: Record<string, string>, onStarted?: () => void): Promise<void> {
 		const [guildId, channelId] = [config.guildId, config.videoChannelId];
+		const session = ++this.playbackSession;
 		this.streamStatus.manualStop = false;
 
 		if (title) {
@@ -390,17 +409,20 @@ export class StreamingService {
 			const { inputForFfmpeg, tempFilePath } = await this.prepareVideoSource(message, videoSource, title, headers);
 			tempFile = tempFilePath;
 
+			// Skipped while being prepared
+			if (session !== this.playbackSession) return;
 			await this.ensureVoiceConnection(guildId, channelId, title);
+			if (session !== this.playbackSession) return;
 			await DiscordUtils.sendPlaying(message, title || videoSource);
 
 			const streamOpts = this.setupStreamConfiguration(videoParams, headers);
-			await this.executeStreamWorkflow(inputForFfmpeg, streamOpts, message, title || videoSource, videoSource);
+			await this.executeStreamWorkflow(inputForFfmpeg, streamOpts, message, title || videoSource, videoSource, onStarted);
 		} catch (error) {
 			await ErrorUtils.handleError(error, `playing video: ${title || videoSource}`);
-			if (this.controller && !this.controller.signal.aborted) this.controller.abort();
+			if (session === this.playbackSession && this.controller && !this.controller.signal.aborted) this.controller.abort();
 			this.markVideoAsFailed(videoSource);
 		} finally {
-			await this.finalizeStream(message, tempFile);
+			await this.finalizeStream(message, tempFile, session);
 		}
 	}
 
