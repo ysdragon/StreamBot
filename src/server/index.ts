@@ -16,7 +16,7 @@ import dashboardRoutes from "./routes/dashboard.js";
 import uploadRoutes from "./routes/upload.js";
 import previewRoutes from "./routes/preview.js";
 
-const app = express();
+const app: express.Application = express();
 
 // Configure EJS templating engine
 app.set('view engine', 'ejs');

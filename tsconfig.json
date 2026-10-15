@@ -24,6 +24,8 @@
     "strictNullChecks": false, /* When type checking, take into account null and undefined. */
     "skipLibCheck": true, /* Skip type checking all .d.ts files. */
 
+    "types": ["bun"],
+
     "allowJs": true, 
     "declaration": true
   }
